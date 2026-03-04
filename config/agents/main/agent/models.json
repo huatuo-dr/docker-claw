@@ -1,0 +1,21 @@
+{
+  "providers": {
+    "custom": {
+      "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "glm-4-flash",
+          "name": "GLM-4-Flash",
+          "reasoning": false,
+          "input": ["text"],
+          "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+          "contextWindow": 128000,
+          "maxTokens": 4096,
+          "api": "openai-completions"
+        }
+      ],
+      "apiKey": "9fb23a0b6b8e415ebeeb04f6bc9fa58b.6r2ySa5QCmrjSLAh"
+    }
+  }
+}

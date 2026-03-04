@@ -1,0 +1,12 @@
+{
+  "models": {
+    "default": "zhipu/glm-4",
+    "providers": {
+      "zhipu": {
+        "apiKey": "9fb23a0b6b8e415ebeeb04f6bc9fa58b.6r2ySa5QCmrjSLAh",
+        "baseURL": "https://open.bigmodel.cn/api/paas/v4",
+        "models": ["glm-4", "glm-4-plus", "glm-4-flash"]
+      }
+    }
+  }
+}

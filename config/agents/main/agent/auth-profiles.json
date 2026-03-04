@@ -1,0 +1,10 @@
+{
+  "profiles": [
+    {
+      "id": "zhipu:manual",
+      "provider": "zhipu",
+      "type": "apiKey",
+      "key": "9fb23a0b6b8e415ebeeb04f6bc9fa58b.6r2ySa5QCmrjSLAh"
+    }
+  ]
+}
