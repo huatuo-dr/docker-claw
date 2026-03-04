@@ -3,7 +3,7 @@
 
 CONTAINER_NAME="mozhi-claw-container"
 IMAGE_NAME="mozhi-claw:m2"
-CONFIG_DIR="$(pwd)/config"
+CONFIG_DIR="$(pwd)/config/mozhi"
 
 echo "🚀 启动 Mozhi-Claw 容器..."
 
