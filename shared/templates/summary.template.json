@@ -1,0 +1,35 @@
+{
+  "task_id": null,
+  "task_name": null,
+  "status": "idle",
+  "started_at": null,
+  "elapsed_seconds": 0,
+  "agents": {
+    "gangzi": {
+      "phase": "空闲",
+      "health": "ok",
+      "last_heartbeat": null
+    },
+    "jianbing": {
+      "phase": "等待需求",
+      "health": "ok",
+      "last_heartbeat": null
+    },
+    "mozhi": {
+      "phase": "空闲",
+      "health": "ok",
+      "last_heartbeat": null
+    }
+  },
+  "progress": {
+    "milestone_completed": 0,
+    "milestone_total": 0,
+    "issue_number": null,
+    "issue_url": null,
+    "issue_comments": 0,
+    "issue_max_comments": 15,
+    "issue_warning_threshold": 12
+  },
+  "next_notification": null,
+  "last_notification": null
+}

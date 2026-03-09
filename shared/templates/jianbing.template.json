@@ -1,0 +1,31 @@
+{
+  "agent": "jianbing",
+  "phase": "等待需求",
+  "phase_list": [
+    "等待需求",
+    "开发需求",
+    "等待Issue",
+    "处理Issue",
+    "等待归档指令",
+    "归档中"
+  ],
+  "current_task": null,
+  "phase_detail": {
+    "started_at": null,
+    "local_commits": 0,
+    "last_push_at": null,
+    "ready_to_archive": false
+  },
+  "current_issue": null,
+  "statistics": {
+    "total_commits": 0,
+    "total_pushes": 0,
+    "files_changed": 0,
+    "lines_added": 0,
+    "lines_deleted": 0,
+    "tokens_used": 0,
+    "duration_seconds": 0
+  },
+  "last_update": null,
+  "heartbeat": null
+}

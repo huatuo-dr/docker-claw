@@ -1,0 +1,31 @@
+{
+  "agent": "mozhi",
+  "phase": "空闲",
+  "phase_list": [
+    "测试设计",
+    "等待开发提交",
+    "审查中",
+    "生成审查意见",
+    "等待Issue回复",
+    "验证修复",
+    "审查成功",
+    "审查失败"
+  ],
+  "current_task": null,
+  "phase_detail": {
+    "started_at": null,
+    "target_commit": null,
+    "last_checked_commit": null
+  },
+  "current_issue": null,
+  "statistics": {
+    "test_cases": 0,
+    "passed": 0,
+    "failed": 0,
+    "review_rounds": 0,
+    "tokens_used": 0,
+    "duration_seconds": 0
+  },
+  "last_update": null,
+  "heartbeat": null
+}

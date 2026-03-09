@@ -1,0 +1,150 @@
+# Docker-Claw Multi-Agent Docker Compose
+# 编排刚子（宿主机）、煎饼（容器）、墨汁儿（容器）
+
+version: '3.8'
+
+services:
+  # 煎饼 - 开发者
+  jianbing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jianbing-claw-container
+    hostname: jianbing
+    
+    # 环境变量
+    environment:
+      - AGENT_NAME=jianbing
+      - AGENT_ROLE=developer
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - GIT_USER_NAME=${GIT_USER_NAME:-Jianbing Bot}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-jianbing@docker-claw.local}
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
+      - OPENCLAW_MODEL=${OPENCLAW_MODEL:-zhipu/glm-4}
+    
+    # 挂载卷
+    volumes:
+      # 共享目录
+      - ./shared:/shared:rw
+      
+      # Git仓库（工作空间）
+      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+      
+      # 煎饼的配置文件
+      - ./config/jianbing:/app/.openclaw/workspace:ro
+      
+      # Git配置（只读）
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - ${HOME}/.ssh:/root/.ssh:ro
+      
+      # OpenClaw数据（持久化）
+      - jianbing-openclaw-data:/root/.openclaw
+    
+    # 工作目录
+    working_dir: /workspace
+    
+    # 网络
+    networks:
+      - docker-claw-network
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # 依赖（如果有）
+    # depends_on:
+    #   - some-service
+
+  # 墨汁儿 - 审查者
+  mozhi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mozhi-claw-container
+    hostname: mozhi
+    
+    # 环境变量
+    environment:
+      - AGENT_NAME=mozhi
+      - AGENT_ROLE=reviewer
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - GIT_USER_NAME=${GIT_USER_NAME:-Mozhi Bot}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-mozhi@docker-claw.local}
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
+      - OPENCLAW_MODEL=${OPENCLAW_MODEL:-zhipu/glm-4}
+    
+    # 挂载卷
+    volumes:
+      # 共享目录
+      - ./shared:/shared:rw
+      
+      # Git仓库（工作空间）
+      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+      
+      # 墨汁儿的配置文件
+      - ./config/mozhi:/app/.openclaw/workspace:ro
+      
+      # Git配置（只读）
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - ${HOME}/.ssh:/root/.ssh:ro
+      
+      # OpenClaw数据（持久化）
+      - mozhi-openclaw-data:/root/.openclaw
+    
+    # 工作目录
+    working_dir: /workspace
+    
+    # 网络
+    networks:
+      - docker-claw-network
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 网络定义
+networks:
+  docker-claw-network:
+    driver: bridge
+    name: docker-claw-network
+
+# 数据卷定义
+volumes:
+  jianbing-openclaw-data:
+    name: jianbing-openclaw-data
+  mozhi-openclaw-data:
+    name: mozhi-openclaw-data
