@@ -1,0 +1,20 @@
+{
+  "task_id": "TASK-{timestamp}-{seq}",
+  "project_id": "{project_id}",
+  "name": "{task_name}",
+  "description": "{description}",
+  "branch": "feature/{task_id}",
+  "milestone_file": "milestone.md",
+  "created_at": "{timestamp}",
+  "completed_at": null,
+  "status": "pending",
+  "current_phase": "initialized",
+  "stats": {
+    "dev_duration": null,
+    "review_duration": null,
+    "total_duration": null,
+    "commits_count": 0,
+    "issues_count": 0,
+    "issue_rounds": 0
+  }
+}

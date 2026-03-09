@@ -189,6 +189,43 @@ if (config.status in ["in_progress", "reviewing"]) {
 4. 等待K哥决策
 5. 执行K哥的指令
 
+### 6. history（历史记录）
+
+**触发：** 任务状态变更、用户查询历史
+
+**核心能力：**
+- `create_project` - 创建新项目
+- `create_task` - 创建新任务
+- `append_event` - 记录事件（Agent状态变更）
+- `update_task_status` - 更新任务状态
+- `query_history` - 查询历史（按项目/任务/Agent/事件）
+- `get_task_stats` - 获取任务统计
+
+**数据结构：** 三级目录
+```
+/shared/history/
+├── projects/
+│   └── PROJ-{project}/
+│       ├── project.json
+│       └── tasks/
+│           └── TASK-{id}/
+│               ├── task.json
+│               └── agents/
+│                   ├── gangzi.json
+│                   ├── jianbing.json
+│                   └── mozhi.json
+└── index.json
+```
+
+**记录时机：**
+- 任务创建 → `append_event(task_created)`
+- 任务启动 → `append_event(task_started)`
+- 任务完成 → `append_event(task_completed)`
+- 检测到异常 → `append_event(exception_detected)`
+- 归档完成 → `append_event(archive_completed)`
+
+详见 `skills/history/SKILL.md`
+
 ## Communication Protocol
 
 ### 1. 与K哥通信

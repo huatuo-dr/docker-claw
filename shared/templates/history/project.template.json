@@ -1,0 +1,13 @@
+{
+  "project_id": "PROJ-{project_name}",
+  "name": "{project_name}",
+  "description": "{description}",
+  "created_at": "{timestamp}",
+  "status": "active",
+  "stats": {
+    "total_tasks": 0,
+    "completed_tasks": 0,
+    "failed_tasks": 0,
+    "total_duration": "0h"
+  }
+}

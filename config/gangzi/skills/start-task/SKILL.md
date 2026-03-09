@@ -32,7 +32,124 @@ next_num=$(ls /workspace/milestones/ 2>/dev/null | wc -l | awk '{printf "%03d", 
 task_id="task-${next_num}"
 ```
 
-### 3. 创建 milestone.md
+### 3. 创建历史记录（任务）
+
+**确定项目：**
+```bash
+# 如果没有项目，创建默认项目
+if [ ! -f "/shared/history/index.json" ]; then
+  # 调用 history 技能的 create_project
+  project_name="default"
+  project_id="PROJ-default"
+  
+  # 创建项目（详见 skills/history/SKILL.md）
+  mkdir -p "/shared/history/projects/$project_id/tasks"
+  
+  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  cat > "/shared/history/projects/$project_id/project.json" <<EOF
+  {
+    "project_id": "$project_id",
+    "name": "$project_name",
+    "description": "默认项目",
+    "created_at": "$ts",
+    "status": "active",
+    "stats": {
+      "total_tasks": 0,
+      "completed_tasks": 0,
+      "failed_tasks": 0,
+      "total_duration": "0h"
+    }
+  }
+  EOF
+  
+  # 创建全局索引
+  cat > /shared/history/index.json <<EOF
+  {
+    "version": "1.0",
+    "last_updated": "$ts",
+    "projects": [{"project_id": "$project_id", "name": "$project_name", "created_at": "$ts"}],
+    "stats": {"total_projects": 1, "total_tasks": 0, "total_events": 0}
+  }
+  EOF
+else
+  # 读取第一个项目ID（或让用户指定）
+  project_id=$(cat /shared/history/index.json | jq -r '.projects[0].project_id')
+fi
+```
+
+**创建任务历史：**
+```bash
+# 调用 history 技能的 create_task
+timestamp=$(date +%Y%m%d%H%M%S)
+seq=$(ls "/shared/history/projects/$project_id/tasks" 2>/dev/null | grep "TASK-$timestamp" | wc -l)
+seq_padded=$(printf "%03d" $seq)
+history_task_id="TASK-$timestamp-$seq_padded"
+
+task_dir="/shared/history/projects/$project_id/tasks/$history_task_id"
+mkdir -p "$task_dir/agents"
+
+ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# 创建 task.json
+cat > "$task_dir/task.json" <<EOF
+{
+  "task_id": "$history_task_id",
+  "project_id": "$project_id",
+  "name": "${task_name}",
+  "description": "${task_description:-}",
+  "branch": "feature/${task_id}",
+  "milestone_file": "milestone.md",
+  "created_at": "$ts",
+  "completed_at": null,
+  "status": "pending",
+  "current_phase": "initialized",
+  "stats": {
+    "dev_duration": null,
+    "review_duration": null,
+    "total_duration": null,
+    "commits_count": 0,
+    "issues_count": 0,
+    "issue_rounds": 0
+  }
+}
+EOF
+
+# 创建 Agent 事件文件
+for agent in gangzi jianbing mozhi; do
+  cat > "$task_dir/agents/$agent.json" <<EOF
+{
+  "task_id": "$history_task_id",
+  "agent": "$agent",
+  "events": []
+}
+EOF
+done
+
+# 更新项目统计
+project_file="/shared/history/projects/$project_id/project.json"
+cat "$project_file" | jq '.stats.total_tasks += 1' > "$project_file.tmp"
+mv "$project_file.tmp" "$project_file"
+
+# 更新全局索引
+cat /shared/history/index.json | jq '.stats.total_tasks += 1' > /shared/history/index.json.tmp
+mv /shared/history/index.json.tmp /shared/history/index.json
+
+# 记录初始事件
+event_id="EVT-$(date +%Y%m%d%H%M%S)-$(shuf -i 1000-9999 -n 1)"
+cat "$task_dir/agents/gangzi.json" | jq ".events += [{
+  \"event_id\": \"$event_id\",
+  \"ts\": \"$ts\",
+  \"event\": \"task_created\",
+  \"phase\": \"initialized\",
+  \"data\": {\"task_name\": \"${task_name}\", \"branch\": \"feature/${task_id}\"}
+}]" > "$task_dir/agents/gangzi.json.tmp"
+mv "$task_dir/agents/gangzi.json.tmp" "$task_dir/agents/gangzi.json"
+
+# 保存 history_task_id 供后续使用
+echo "$history_task_id" > /tmp/current_history_task_id
+```
+
+### 4. 创建 milestone.md
 
 **模板：**
 ```markdown
@@ -79,7 +196,7 @@ cat > /workspace/milestone.md <<EOF
 EOF
 ```
 
-### 4. 初始化全局配置
+### 5. 初始化全局配置
 
 **创建 /shared/config.json：**
 ```bash
@@ -89,6 +206,8 @@ cat > /shared/config.json <<EOF
   "status": "in_progress",
   "current_task": {
     "id": "${task_id}",
+    "history_id": "${history_task_id}",
+    "project_id": "${project_id}",
     "name": "${task_name}",
     "github_repo": "${GITHUB_REPO}",
     "main_branch": "main",
@@ -109,7 +228,7 @@ cat > /shared/config.json <<EOF
 EOF
 ```
 
-### 5. 创建Git分支
+### 6. 创建Git分支
 
 ```bash
 cd /workspace
@@ -137,7 +256,34 @@ git push -u origin feature/${task_id}
 - main 分支不会有 milestone.md
 - 煎饼 pull feature 分支时能获取到 milestone.md
 
-### 6. 初始化状态文件
+**记录历史事件：**
+```bash
+# 记录 Git 分支创建事件
+history_task_id=$(cat /tmp/current_history_task_id)
+task_dir="/shared/history/projects/${project_id}/tasks/${history_task_id}"
+
+event_id="EVT-$(date +%Y%m%d%H%M%S)-$(shuf -i 1000-9999 -n 1)"
+ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+cat "$task_dir/agents/gangzi.json" | jq ".events += [{
+  \"event_id\": \"$event_id\",
+  \"ts\": \"$ts\",
+  \"event\": \"branch_created\",
+  \"phase\": \"initialized\",
+  \"data\": {\"branch\": \"feature/${task_id}\", \"commit\": \"初始化: ${task_name}\"}
+}]" > "$task_dir/agents/gangzi.json.tmp"
+mv "$task_dir/agents/gangzi.json.tmp" "$task_dir/agents/gangzi.json"
+
+# 更新任务阶段
+cat "$task_dir/task.json" | jq ".current_phase = \"developing\" | .status = \"running\"" > "$task_dir/task.json.tmp"
+mv "$task_dir/task.json.tmp" "$task_dir/task.json"
+
+# 更新全局索引事件计数
+cat /shared/history/index.json | jq '.stats.total_events += 2' > /shared/history/index.json.tmp
+mv /shared/history/index.json.tmp /shared/history/index.json
+```
+
+### 7. 初始化状态文件
 
 **创建 /shared/status/summary.json：**
 ```bash
@@ -180,7 +326,7 @@ cat > /shared/status/summary.json <<EOF
 EOF
 ```
 
-### 7. 启动Cron任务
+### 8. 启动Cron任务
 
 **启动煎饼的Cron：**
 ```bash
@@ -225,7 +371,7 @@ cat /shared/config.json | jq ".cron_jobs.jianbing = \"${jianbing_job_id}\" | .cr
 mv /shared/config.json.tmp /shared/config.json
 ```
 
-### 8. 通知煎饼和墨汁儿
+### 9. 通知煎饼和墨汁儿
 
 **通知煎饼（通过状态文件）：**
 ```bash
@@ -239,7 +385,7 @@ mv /shared/config.json.tmp /shared/config.json
 # 看到有 current_task 就知道有新任务
 ```
 
-### 9. 通知K哥
+### 10. 通知K哥
 
 **消息模板：**
 ```
@@ -266,7 +412,7 @@ mv /shared/config.json.tmp /shared/config.json
 send_message_to_k_ge "${message}"
 ```
 
-### 10. 更新自己的状态
+### 11. 更新自己的状态
 
 ```bash
 cat > /shared/status/gangzi.json <<EOF
@@ -300,7 +446,7 @@ cat > /shared/status/gangzi.json <<EOF
 EOF
 ```
 
-### 11. 记录日志
+### 12. 记录日志
 
 ```bash
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] 刚子: 任务启动 - ${task_id} (${task_name})" >> /shared/logs/gangzi.log
