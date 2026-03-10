@@ -34,3 +34,8 @@ docker-compose.override.yml
 dist/
 build/
 *.tar.gz
+
+# Runtime files (auto-generated)
+shared/config.json
+shared/status/
+shared/logs/

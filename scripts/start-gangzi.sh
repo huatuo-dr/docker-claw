@@ -54,14 +54,34 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   fi
 fi
 
-if [[ -z "$ZHIPU_API_KEY" ]]; then
-  echo "⚠️ 警告: ZHIPU_API_KEY 未设置"
+# 检查刚子的API Key（Kimi）
+if [[ -z "$GANGZI_API_KEY" ]]; then
+  echo "⚠️ 警告: GANGZI_API_KEY 未设置（刚子使用Kimi模型）"
   read -p "是否继续? (y/N): " -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
   fi
 fi
+
+# 设置刚子使用的模型和API Key
+export MOONSHOT_API_KEY="$GANGZI_API_KEY"
+export OPENCLAW_MODEL="${GANGZI_MODEL:-moonshot/kimi-k2.5}"
+
+# 飞书配置（如果设置了的话）
+if [[ -n "$FEISHU_APP_ID" ]]; then
+  export FEISHU_APP_ID="$FEISHU_APP_ID"
+  echo "✅ 飞书配置已加载"
+fi
+
+if [[ -n "$FEISHU_APP_SECRET" ]]; then
+  export FEISHU_APP_SECRET="$FEISHU_APP_SECRET"
+fi
+
+# Git配置
+export GIT_USER_NAME="${GANGZI_GIT_NAME:-Gangzi}"
+export GIT_USER_EMAIL="${GIT_USER_EMAIL:-gangzi@docker-claw.local}"
+echo "✅ Git配置已加载: $GIT_USER_NAME <$GIT_USER_EMAIL>"
 
 echo "✅ 环境变量已设置"
 
@@ -96,27 +116,55 @@ OPENCLAW_CONFIG="$HOME/.openclaw/openclaw.json"
 
 if [ ! -f "$OPENCLAW_CONFIG" ]; then
   echo "创建 openclaw.json..."
-  
+
   cat > "$OPENCLAW_CONFIG" <<EOF
 {
+  "wizard": {
+    "lastRunMode": "local"
+  },
+  "models": {},
+  "gateway": {
+    "mode": "local"
+  },
   "agents": {
     "defaults": {
-      "workspace": "$OPENCLAW_WORKSPACE",
-      "heartbeat": {
-        "enabled": true,
-        "intervalMs": 600000
-      }
+      "workspace": "$OPENCLAW_WORKSPACE"
     }
   },
-  "models": {
-    "default": "zhipu/glm-4"
+  "channels": {},
+  "plugins": {
+    "entries": {}
   }
 }
 EOF
-  
+
   echo "✅ openclaw.json 已创建"
+
+  # 配置飞书通道
+  if [[ -n "$FEISHU_APP_ID" && -n "$FEISHU_APP_SECRET" ]]; then
+    echo "配置飞书通道..."
+    openclaw config set channels.feishu.enabled true
+    openclaw config set channels.feishu.appId "$FEISHU_APP_ID"
+    openclaw config set channels.feishu.appSecret "$FEISHU_APP_SECRET"
+    openclaw config set plugins.entries.feishu.enabled true
+    echo "✅ 飞书通道已配置"
+  fi
 else
   echo "✅ openclaw.json 已存在"
+
+  # 如果飞书配置存在但未在配置文件中，添加它
+  if [[ -n "$FEISHU_APP_ID" && -n "$FEISHU_APP_SECRET" ]]; then
+    if ! grep -q "feishu" "$OPENCLAW_CONFIG" 2>/dev/null; then
+      echo "添加飞书通道配置..."
+      openclaw config set channels.feishu.enabled true
+      openclaw config set channels.feishu.appId "$FEISHU_APP_ID"
+      openclaw config set channels.feishu.appSecret "$FEISHU_APP_SECRET"
+      openclaw config set plugins.entries.feishu.enabled true
+      echo "✅ 飞书通道已添加"
+    else
+      echo "✅ 飞书通道已存在"
+    fi
+  fi
 fi
 
 # 启动OpenClaw Gateway

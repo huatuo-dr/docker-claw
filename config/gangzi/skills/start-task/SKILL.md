@@ -18,10 +18,41 @@ triggers:
 **输入：**
 - 需求名称
 - 需求描述（可选）
+- **目标仓库**（格式: owner/repo）
 
 **示例：**
 ```
+K哥: "开发用户认证功能，仓库是 huatuo/my-project"
+```
+
+或者分步交互：
+```
 K哥: "开发用户认证功能"
+刚子: "好的，请问要开发哪个仓库？格式: owner/repo"
+K哥: "huatuo/my-project"
+```
+
+**确认仓库信息：**
+```bash
+# 从用户输入中提取仓库，或主动询问
+target_repo="${user_specified_repo}"
+
+if [[ -z "$target_repo" ]]; then
+  send_message_to_k_ge "请指定目标仓库，格式: owner/repo"
+  # 等待用户回复...
+fi
+
+# 验证仓库格式
+if [[ ! "$target_repo" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$ ]]; then
+  send_message_to_k_ge "仓库格式不正确，请使用 owner/repo 格式"
+  exit 1
+fi
+
+# 验证仓库可访问
+if ! gh repo view "$target_repo" &>/dev/null; then
+  send_message_to_k_ge "无法访问仓库 $target_repo，请检查仓库名称和Token权限"
+  exit 1
+fi
 ```
 
 ### 2. 生成任务ID
@@ -209,7 +240,7 @@ cat > /shared/config.json <<EOF
     "history_id": "${history_task_id}",
     "project_id": "${project_id}",
     "name": "${task_name}",
-    "github_repo": "${GITHUB_REPO}",
+    "github_repo": "${target_repo}",
     "main_branch": "main",
     "target_branch": "feature/${task_id}",
     "milestone_file": "milestone.md",

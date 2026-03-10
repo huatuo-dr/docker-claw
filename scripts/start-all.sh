@@ -22,26 +22,48 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   ENV_MISSING=1
 fi
 
-if [[ -z "$ZHIPU_API_KEY" ]]; then
-  echo "❌ ZHIPU_API_KEY 未设置"
+if [[ -z "$GANGZI_API_KEY" ]]; then
+  echo "❌ GANGZI_API_KEY 未设置（刚子使用Kimi）"
+  ENV_MISSING=1
+fi
+
+if [[ -z "$JIANBING_API_KEY" ]]; then
+  echo "❌ JIANBING_API_KEY 未设置（煎饼使用MiniMax）"
+  ENV_MISSING=1
+fi
+
+if [[ -z "$MOZHI_API_KEY" ]]; then
+  echo "❌ MOZHI_API_KEY 未设置（墨汁儿使用智谱GLM）"
   ENV_MISSING=1
 fi
 
 if [[ $ENV_MISSING -eq 1 ]]; then
   echo ""
-  echo "请设置必要的环境变量:"
-  echo "  export GITHUB_TOKEN=your_token"
-  echo "  export ZHIPU_API_KEY=your_key"
+  echo "请在 .env 文件中设置必要的环境变量:"
+  echo "  GITHUB_TOKEN=ghp_xxx"
+  echo "  GANGZI_API_KEY=sk-kimi-xxx"
+  echo "  JIANBING_API_KEY=sk-minimax-xxx"
+  echo "  MOZHI_API_KEY=xxx.zhipu-xxx"
   echo ""
   echo "可选环境变量:"
-  echo "  export GITHUB_REPO=yourname/yourrepo"
-  echo "  export WORKSPACE_PATH=/path/to/workspace"
-  echo "  export GIT_USER_NAME=\"Your Name\""
-  echo "  export GIT_USER_EMAIL=\"your@email.com\""
+  echo "  FEISHU_APP_ID=cli_xxx          # 飞书通讯"
+  echo "  FEISHU_APP_SECRET=xxx          # 飞书通讯"
+  echo "  GIT_USER_EMAIL=your@email.com  # Git提交邮箱"
+  echo "  WORKSPACE_PATH=./workspace     # 工作目录"
   exit 1
 fi
 
 echo "✅ 环境变量检查通过"
+
+# 显示配置信息
+echo ""
+echo "📋 配置信息:"
+echo "  - 刚子模型: ${GANGZI_MODEL:-moonshot/kimi-k2.5}"
+echo "  - 煎饼模型: ${JIANBING_MODEL:-minimax/MiniMax-M2.5}"
+echo "  - 墨汁儿模型: ${MOZHI_MODEL:-zhipu/glm-5}"
+if [[ -n "$FEISHU_APP_ID" ]]; then
+  echo "  - 飞书通讯: 已配置"
+fi
 
 # 初始化共享目录
 echo ""

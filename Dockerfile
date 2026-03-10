@@ -58,4 +58,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD pgrep -f "openclaw" > /dev/null || exit 1
 
 # 默认命令（由启动脚本覆盖）
-CMD ["openclaw", "gateway", "start"]
+# 使用 --port 指定端口，避免 systemd 依赖
+CMD ["openclaw", "gateway", "--port", "18789"]

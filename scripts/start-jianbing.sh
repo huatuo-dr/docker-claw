@@ -34,15 +34,10 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   exit 1
 fi
 
-if [[ -z "$ZHIPU_API_KEY" ]]; then
-  echo "❌ 错误: ZHIPU_API_KEY 未设置"
-  echo "请设置: export ZHIPU_API_KEY=your_key"
+if [[ -z "$JIANBING_API_KEY" ]]; then
+  echo "❌ 错误: JIANBING_API_KEY 未设置（煎饼使用MiniMax模型）"
+  echo "请设置: export JIANBING_API_KEY=your_key"
   exit 1
-fi
-
-if [[ -z "$GITHUB_REPO" ]]; then
-  echo "⚠️ 警告: GITHUB_REPO 未设置，使用默认值"
-  export GITHUB_REPO="yourname/yourrepo"
 fi
 
 if [[ -z "$WORKSPACE_PATH" ]]; then
@@ -87,22 +82,22 @@ docker run -d \
   -e AGENT_NAME=jianbing \
   -e AGENT_ROLE=developer \
   -e GITHUB_TOKEN="$GITHUB_TOKEN" \
-  -e GITHUB_REPO="$GITHUB_REPO" \
-  -e GIT_USER_NAME="${GIT_USER_NAME:-Jianbing Bot}" \
+  -e GITHUB_REPO="" \
+  -e GIT_USER_NAME="${JIANBING_GIT_NAME:-Jianbing}" \
   -e GIT_USER_EMAIL="${GIT_USER_EMAIL:-jianbing@docker-claw.local}" \
-  -e ZHIPU_API_KEY="$ZHIPU_API_KEY" \
-  -e OPENCLAW_MODEL="${OPENCLAW_MODEL:-zhipu/glm-4}" \
+  -e MINIMAX_API_KEY="$JIANBING_API_KEY" \
+  -e OPENCLAW_MODEL="${JIANBING_MODEL:-minimax/MiniMax-M2.5}" \
   -v "$PROJECT_ROOT/shared:/shared:rw" \
   -v "$WORKSPACE_PATH:/workspace:rw" \
   -v "$PROJECT_ROOT/config/jianbing:/app/.openclaw/workspace:ro" \
   -v "$HOME/.gitconfig:/root/.gitconfig:ro" \
   -v "$HOME/.ssh:/root/.ssh:ro" \
-  -v jianbing-openclaw-data:/root/.openclaw \
+  -v "$PROJECT_ROOT/config/jianbing/.openclaw:/root/.openclaw:rw" \
   -w /workspace \
   --cpus="2" \
   --memory="4g" \
   docker-claw:latest \
-  openclaw gateway start
+  openclaw gateway --port 18789
 
 # 等待容器启动
 echo "等待容器启动..."
@@ -122,6 +117,9 @@ echo ""
 echo "⚙️ 初始化OpenClaw..."
 
 docker exec jianbing-claw-container bash -c "
+  mkdir -p /app/.openclaw && \
+  echo '{\"gateway\":{\"mode\":\"local\"}}' > /app/.openclaw/openclaw.json && \
+  mkdir -p /app/.openclaw/workspace && \
   cd /app/.openclaw/workspace && \
   if [ ! -f 'BOOTSTRAP.md' ]; then \
     openclaw setup; \

@@ -17,11 +17,10 @@ services:
       - AGENT_NAME=jianbing
       - AGENT_ROLE=developer
       - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GITHUB_REPO=${GITHUB_REPO}
-      - GIT_USER_NAME=${GIT_USER_NAME:-Jianbing Bot}
+      - GIT_USER_NAME=${JIANBING_GIT_NAME:-Jianbing}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-jianbing@docker-claw.local}
-      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
-      - OPENCLAW_MODEL=${OPENCLAW_MODEL:-zhipu/glm-4}
+      - MINIMAX_API_KEY=${JIANBING_API_KEY}
+      - OPENCLAW_MODEL=${JIANBING_MODEL:-minimax/MiniMax-M2.5}
     
     # 挂载卷
     volumes:
@@ -85,11 +84,10 @@ services:
       - AGENT_NAME=mozhi
       - AGENT_ROLE=reviewer
       - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GITHUB_REPO=${GITHUB_REPO}
-      - GIT_USER_NAME=${GIT_USER_NAME:-Mozhi Bot}
+      - GIT_USER_NAME=${MOZHI_GIT_NAME:-Mozhi}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-mozhi@docker-claw.local}
-      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
-      - OPENCLAW_MODEL=${OPENCLAW_MODEL:-zhipu/glm-4}
+      - ZHIPU_API_KEY=${MOZHI_API_KEY}
+      - OPENCLAW_MODEL=${MOZHI_MODEL:-zhipu/glm-5}
     
     # 挂载卷
     volumes:

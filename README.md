@@ -61,8 +61,10 @@ vim .env
 GITHUB_TOKEN=ghp_your_github_token_here
 GITHUB_REPO=yourname/yourrepo
 
-# 智谱AI配置
-ZHIPU_API_KEY=your_zhipu_api_key_here
+# Agent模型配置（每个Agent可使用不同模型）
+GANGZI_API_KEY=your_kimi_api_key      # 刚子 - Kimi
+JIANBING_API_KEY=your_minimax_api_key # 煎饼 - MiniMax
+MOZHI_API_KEY=your_zhipu_api_key      # 墨汁儿 - 智谱GLM
 ```
 
 **可选配置：**
@@ -74,8 +76,9 @@ GIT_USER_EMAIL="your@email.com"
 # 工作目录
 WORKSPACE_PATH=/path/to/workspace
 
-# OpenClaw模型
-OPENCLAW_MODEL=zhipu/glm-4
+# 飞书配置（用于刚子与用户通讯）
+FEISHU_APP_ID=your_feishu_app_id
+FEISHU_APP_SECRET=your_feishu_app_secret
 ```
 
 ### 3. 初始化共享目录

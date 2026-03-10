@@ -1,17 +1,86 @@
 {
   "providers": {
+    "moonshot": {
+      "baseUrl": "https://api.moonshot.cn/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "kimi-k2.5",
+          "name": "Kimi K2.5",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 256000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        },
+        {
+          "id": "kimi-k2-thinking",
+          "name": "Kimi K2 Thinking",
+          "reasoning": true,
+          "input": ["text"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 256000,
+          "maxTokens": 16384,
+          "api": "openai-completions"
+        }
+      ]
+    },
+    "minimax": {
+      "baseUrl": "https://api.minimax.chat/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "MiniMax-M2.5",
+          "name": "MiniMax M2.5",
+          "reasoning": true,
+          "input": ["text"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 245000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        },
+        {
+          "id": "MiniMax-M2.5-highspeed",
+          "name": "MiniMax M2.5 Highspeed",
+          "reasoning": false,
+          "input": ["text"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 245000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        }
+      ]
+    },
     "zhipu": {
       "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
       "api": "openai-completions",
       "models": [
         {
-          "id": "glm-4",
-          "name": "GLM-4",
-          "reasoning": false,
-          "input": [
-            "text",
-            "image"
-          ],
+          "id": "glm-5",
+          "name": "GLM-5",
+          "reasoning": true,
+          "input": ["text", "image"],
           "cost": {
             "input": 0,
             "output": 0,
@@ -19,17 +88,14 @@
             "cacheWrite": 0
           },
           "contextWindow": 128000,
-          "maxTokens": 4096,
+          "maxTokens": 8192,
           "api": "openai-completions"
         },
         {
           "id": "glm-4-plus",
           "name": "GLM-4-Plus",
           "reasoning": false,
-          "input": [
-            "text",
-            "image"
-          ],
+          "input": ["text", "image"],
           "cost": {
             "input": 0,
             "output": 0,
@@ -44,9 +110,7 @@
           "id": "glm-4-flash",
           "name": "GLM-4-Flash",
           "reasoning": false,
-          "input": [
-            "text"
-          ],
+          "input": ["text"],
           "cost": {
             "input": 0,
             "output": 0,
@@ -57,8 +121,7 @@
           "maxTokens": 4096,
           "api": "openai-completions"
         }
-      ],
-      "apiKey": "9fb23a0b6b8e415ebeeb04f6bc9fa58b.6r2ySa5QCmrjSLAh"
+      ]
     }
   }
 }
