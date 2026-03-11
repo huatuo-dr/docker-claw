@@ -254,20 +254,136 @@ if (config.status in ["in_progress", "reviewing"]) {
 
 ### 2. 与煎饼通信
 
-**方式：** 通过 `/shared/status/jianbing.json`
+**煎饼的访问信息：**
+- **容器名**: `jianbing-claw-container`
+- **Gateway端口**: `18789`（容器内）→ `18891`（宿主机映射）
+- **工作目录**: `/app/.openclaw/workspace`
+- **API Key环境变量**: `MINIMAX_API_KEY`
+- **模型**: `minimax-cn/MiniMax-M2.5`
+
+**通信方式1：Docker Exec 直接通信（推荐用于紧急通知）**
+
+```bash
+# 直接发送消息给煎饼（启动任务、紧急通知）
+docker exec jianbing-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "你的消息内容"'
+
+# 示例：通知新任务
+docker exec jianbing-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "task-001 开发任务已创建，请开始开发"'
+
+# 示例：询问进度
+docker exec jianbing-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "当前进度如何？"'
+```
+
+**通信方式2：共享状态文件（主要工作方式）**
+
+```bash
+# 1. 更新 config.json 通知有新任务
+cat > /shared/config.json <<EOF
+{
+  "status": "in_progress",
+  "current_task": {
+    "id": "task-001",
+    "name": "用户登录功能",
+    "target_branch": "feature/task-001"
+  }
+}
+EOF
+
+# 2. 煎饼通过 Cron 检测 config.json 变化
+# 3. 煎饼执行操作后更新自己的状态
+cat > /shared/status/jianbing.json <<EOF
+{
+  "agent": "jianbing",
+  "phase": "开发需求",
+  "current_task": {"id": "task-001"},
+  "heartbeat": "$(date -Iseconds)"
+}
+EOF
+
+# 4. 刚子通过 Heartbeat 读取 jianbing.json 获取状态
+```
 
 **流程：**
 ```
-刚子更新 config.json → 煎饼Cron检测 → 煎饼执行操作 → 煎饼更新状态 → 刚子Heartbeat读取
+方式1（直接）: 刚子 docker exec → 煎饼立即响应
+方式2（状态）: 刚子更新 config.json → 煎饼Cron检测 → 煎饼执行 → 煎饼更新状态 → 刚子Heartbeat读取
 ```
 
 ### 3. 与墨汁儿通信
 
-**方式：** 通过 `/shared/status/mozhi.json`
+**墨汁儿的访问信息：**
+- **容器名**: `mozhi-claw-container`
+- **Gateway端口**: `18790`（容器内）→ `18892`（宿主机映射）
+- **工作目录**: `/app/.openclaw/workspace`
+- **API Key环境变量**: `ZHIPU_API_KEY`
+- **模型**: `zhipu/glm-5`
+
+**通信方式1：Docker Exec 直接通信（推荐用于紧急通知）**
+
+```bash
+# 直接发送消息给墨汁儿（启动任务、紧急通知）
+docker exec mozhi-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "你的消息内容"'
+
+# 示例：通知新任务
+docker exec mozhi-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "task-001 审查任务已创建，请准备测试设计"'
+
+# 示例：询问审查进度
+docker exec mozhi-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "代码审查进展如何？"'
+```
+
+**通信方式2：共享状态文件（主要工作方式）**
+
+```bash
+# 1. 墨汁儿通过 Cron 检测 config.json 或 GitHub 有新 commit
+# 2. 墨汁儿执行审查后更新自己的状态
+cat > /shared/status/mozhi.json <<EOF
+{
+  "agent": "mozhi",
+  "phase": "审查中",
+  "current_task": {"id": "task-001"},
+  "current_issue": {"number": 123, "comments_count": 0},
+  "heartbeat": "$(date -Iseconds)"
+}
+EOF
+
+# 3. 刚子通过 Heartbeat 读取 mozhi.json 获取状态
+```
 
 **流程：**
 ```
-刚子更新 config.json → 墨汁儿Cron检测 → 墨汁儿执行操作 → 墨汁儿更新状态 → 刚子Heartbeat读取
+方式1（直接）: 刚子 docker exec → 墨汁儿立即响应
+方式2（状态）: 墨汁儿检测 commit → 墨汁儿审查 → 墨汁儿更新状态/GitHub Issue → 刚子Heartbeat读取
+```
+
+### 4. 通信方式选择指南
+
+| 场景 | 推荐方式 | 命令示例 |
+|------|----------|----------|
+| **启动新任务** | Docker Exec + 状态文件 | 先更新 config.json，再 docker exec 通知 |
+| **紧急通知** | Docker Exec | `docker exec ... --message "紧急：请立即处理"` |
+| **日常进度监控** | 状态文件 | 读取 `/shared/status/*.json` |
+| **异常处理** | Docker Exec | 直接询问 Agent 状态 |
+| **归档通知** | Docker Exec | 直接通知煎饼执行归档 |
+
+### 5. 检查 Agent 是否在线
+
+```bash
+# 检查容器是否运行
+docker ps | grep jianbing-claw-container
+docker ps | grep mozhi-claw-container
+
+# 检查 Agent 是否能响应
+docker exec jianbing-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "ping"' && echo "煎饼在线"
+
+docker exec mozhi-claw-container /bin/bash -c \
+  'openclaw agent --local --agent main --message "ping"' && echo "墨汁儿在线"
 ```
 
 ## Git Operations
