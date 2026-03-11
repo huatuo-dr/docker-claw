@@ -79,6 +79,7 @@ docker run -d \
   --hostname jianbing \
   --network docker-claw-network \
   --restart unless-stopped \
+  -p 127.0.0.1:18891:18789 \
   -e AGENT_NAME=jianbing \
   -e AGENT_ROLE=developer \
   -e GITHUB_TOKEN="$GITHUB_TOKEN" \
@@ -94,10 +95,10 @@ docker run -d \
   -v "$HOME/.ssh:/root/.ssh:ro" \
   -v "$PROJECT_ROOT/config/jianbing/.openclaw:/root/.openclaw:rw" \
   -w /workspace \
-  --cpus="2" \
+  --cpus="1" \
   --memory="4g" \
   docker-claw:latest \
-  openclaw gateway --port 18789
+  openclaw gateway --port 18789 --allow-unconfigured
 
 # 等待容器启动
 echo "等待容器启动..."
@@ -124,6 +125,68 @@ docker exec jianbing-claw-container bash -c "
   if [ ! -f 'BOOTSTRAP.md' ]; then \
     openclaw setup; \
   fi
+"
+
+# 配置MiniMax模型和API Key
+echo "🔧 配置MiniMax模型..."
+docker exec jianbing-claw-container bash -c "
+  export MINIMAX_API_KEY=\"$MINIMAX_API_KEY\" && \
+  cd /app/.openclaw/workspace && \
+  # 配置模型
+  cat > /app/.openclaw/.openclaw/openclaw.json << 'CONFIG'
+{
+  \"meta\": { \"lastTouchedVersion\": \"2026.3.2\", \"lastTouchedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" },
+  \"auth\": {
+    \"profiles\": {
+      \"minimax-cn:default\": { \"provider\": \"minimax-cn\", \"mode\": \"api_key\" }
+    }
+  },
+  \"models\": {
+    \"mode\": \"merge\",
+    \"providers\": {
+      \"minimax-cn\": {
+        \"baseUrl\": \"https://api.minimaxi.com/anthropic\",
+        \"api\": \"anthropic-messages\",
+        \"authHeader\": true,
+        \"models\": [
+          {
+            \"id\": \"MiniMax-M2.5\",
+            \"name\": \"MiniMax M2.5\",
+            \"reasoning\": true,
+            \"input\": [\"text\"],
+            \"cost\": { \"input\": 0.3, \"output\": 1.2, \"cacheRead\": 0.03, \"cacheWrite\": 0.12 },
+            \"contextWindow\": 200000,
+            \"maxTokens\": 8192
+          }
+        ]
+      }
+    }
+  },
+  \"agents\": {
+    \"defaults\": {
+      \"model\": { \"primary\": \"minimax-cn/MiniMax-M2.5\" },
+      \"models\": { \"minimax-cn/MiniMax-M2.5\": { \"alias\": \"MiniMax\" } },
+      \"workspace\": \"/app/.openclaw/.openclaw/workspace\",
+      \"compaction\": { \"mode\": \"safeguard\" }
+    }
+  },
+  \"gateway\": { \"mode\": \"local\" }
+}
+CONFIG
+  # 创建auth-profiles.json
+  mkdir -p /app/.openclaw/.openclaw/agents/main/agent && \
+  cat > /app/.openclaw/.openclaw/agents/main/agent/auth-profiles.json << 'AUTH'
+{
+  \"profiles\": [
+    {
+      \"id\": \"minimax-cn:manual\",
+      \"provider\": \"minimax-cn\",
+      \"type\": \"apiKey\",
+      \"key\": \"$MINIMAX_API_KEY\"
+    }
+  ]
+}
+AUTH
 "
 
 echo "✅ OpenClaw初始化完成"

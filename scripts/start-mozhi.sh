@@ -90,6 +90,7 @@ docker run -d \
   --hostname mozhi \
   --network docker-claw-network \
   --restart unless-stopped \
+  -p 127.0.0.1:18892:18790 \
   -e AGENT_NAME=mozhi \
   -e AGENT_ROLE=reviewer \
   -e GITHUB_TOKEN="$GITHUB_TOKEN" \
@@ -105,10 +106,10 @@ docker run -d \
   -v "$HOME/.ssh:/root/.ssh:ro" \
   -v "$PROJECT_ROOT/config/mozhi/.openclaw:/root/.openclaw:rw" \
   -w /workspace \
-  --cpus="2" \
+  --cpus="1" \
   --memory="4g" \
   docker-claw:latest \
-  openclaw gateway --port 18790
+  openclaw gateway --port 18790 --allow-unconfigured
 
 # 等待容器启动
 echo "等待容器启动..."
@@ -131,11 +132,73 @@ echo "⚙️ 初始化OpenClaw..."
 echo "等待容器完全启动..."
 sleep 10
 
-# 创建配置文件
+# 创建配置文件并设置智谱GLM
+echo "🔧 配置智谱GLM模型..."
 docker exec mozhi-claw-container bash -c "
   mkdir -p /app/.openclaw && \
-  echo '{\"gateway\":{\"mode\":\"local\"}}' > /app/.openclaw/openclaw.json
+  cat > /app/.openclaw/.openclaw/openclaw.json << 'CONFIG'
+{
+  \"meta\": { \"lastTouchedVersion\": \"2026.3.2\", \"lastTouchedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" },
+  \"auth\": {
+    \"profiles\": {
+      \"zhipu:default\": { \"provider\": \"zhipu\", \"mode\": \"api_key\" }
+    }
+  },
+  \"models\": {
+    \"mode\": \"merge\",
+    \"providers\": {
+      \"zhipu\": {
+        \"baseUrl\": \"https://open.bigmodel.cn/api/paas/v4\",
+        \"api\": \"openai-completions\",
+        \"models\": [
+          {
+            \"id\": \"glm-5\",
+            \"name\": \"GLM-5\",
+            \"reasoning\": false,
+            \"input\": [\"text\", \"image\"],
+            \"cost\": { \"input\": 0, \"output\": 0, \"cacheRead\": 0, \"cacheWrite\": 0 },
+            \"contextWindow\": 128000,
+            \"maxTokens\": 4096
+          }
+        ]
+      }
+    }
+  },
+  \"agents\": {
+    \"defaults\": {
+      \"model\": { \"primary\": \"zhipu/glm-5\" },
+      \"models\": { \"zhipu/glm-5\": { \"alias\": \"GLM\" } },
+      \"workspace\": \"/app/.openclaw/.openclaw/workspace\",
+      \"compaction\": { \"mode\": \"safeguard\" }
+    }
+  },
+  \"gateway\": { \"mode\": \"local\" }
+}
+CONFIG
 "
+
+# 创建auth-profiles.json（在宿主机生成，复制到容器）
+echo "Creating auth-profiles.json with API key..."
+docker exec mozhi-claw-container bash -c "mkdir -p /app/.openclaw/.openclaw/agents/main/agent"
+
+# 在宿主机生成正确的 JSON 文件
+AUTH_FILE=$(mktemp)
+cat > "$AUTH_FILE" << EOF
+{
+  "version": 1,
+  "profiles": {
+    "zhipu:default": {
+      "type": "api_key",
+      "provider": "zhipu",
+      "key": "$MOZHI_API_KEY"
+    }
+  }
+}
+EOF
+
+# 复制到容器
+docker cp "$AUTH_FILE" mozhi-claw-container:/app/.openclaw/.openclaw/agents/main/agent/auth-profiles.json
+rm "$AUTH_FILE"
 
 echo "✅ 配置文件已创建"
 

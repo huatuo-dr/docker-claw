@@ -140,6 +140,25 @@ EOF
 
   echo "✅ openclaw.json 已创建"
 
+  # 配置 Kimi API Key
+  if [[ -n "$GANGZI_API_KEY" ]]; then
+    echo "🔧 配置 Kimi API Key..."
+    mkdir -p "$HOME/.openclaw/agents/main/agent"
+    cat > "$HOME/.openclaw/agents/main/agent/auth-profiles.json" << EOF
+{
+  "version": 1,
+  "profiles": {
+    "moonshot:default": {
+      "type": "api_key",
+      "provider": "moonshot",
+      "key": "$GANGZI_API_KEY"
+    }
+  }
+}
+EOF
+    echo "✅ auth-profiles.json 已创建"
+  fi
+
   # 配置飞书通道
   if [[ -n "$FEISHU_APP_ID" && -n "$FEISHU_APP_SECRET" ]]; then
     echo "配置飞书通道..."
@@ -151,6 +170,25 @@ EOF
   fi
 else
   echo "✅ openclaw.json 已存在"
+
+  # 检查并创建 auth-profiles.json（如果不存在）
+  if [[ -n "$GANGZI_API_KEY" ]] && [[ ! -f "$HOME/.openclaw/agents/main/agent/auth-profiles.json" ]]; then
+    echo "🔧 配置 Kimi API Key..."
+    mkdir -p "$HOME/.openclaw/agents/main/agent"
+    cat > "$HOME/.openclaw/agents/main/agent/auth-profiles.json" << EOF
+{
+  "version": 1,
+  "profiles": {
+    "moonshot:default": {
+      "type": "api_key",
+      "provider": "moonshot",
+      "key": "$GANGZI_API_KEY"
+    }
+  }
+}
+EOF
+    echo "✅ auth-profiles.json 已创建"
+  fi
 
   # 如果飞书配置存在但未在配置文件中，添加它
   if [[ -n "$FEISHU_APP_ID" && -n "$FEISHU_APP_SECRET" ]]; then
