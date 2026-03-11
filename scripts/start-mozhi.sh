@@ -101,7 +101,7 @@ docker run -d \
   -e OPENCLAW_MODEL="${MOZHI_MODEL:-zhipu/glm-5}" \
   -v "$PROJECT_ROOT/shared:/shared:rw" \
   -v "$WORKSPACE_PATH:/workspace:rw" \
-  -v "$PROJECT_ROOT/config/mozhi:/app/.openclaw/workspace:ro" \
+  -v "$PROJECT_ROOT/config/mozhi:/app/.openclaw/workspace:rw" \
   -v "$HOME/.gitconfig:/root/.gitconfig:ro" \
   -v "$HOME/.ssh:/root/.ssh:ro" \
   -v "$PROJECT_ROOT/config/mozhi/.openclaw:/root/.openclaw:rw" \
@@ -168,7 +168,7 @@ docker exec mozhi-claw-container bash -c "
     \"defaults\": {
       \"model\": { \"primary\": \"zhipu/glm-5\" },
       \"models\": { \"zhipu/glm-5\": { \"alias\": \"GLM\" } },
-      \"workspace\": \"/app/.openclaw/.openclaw/workspace\",
+      \"workspace\": \"/app/.openclaw/workspace\",
       \"compaction\": { \"mode\": \"safeguard\" }
     }
   },

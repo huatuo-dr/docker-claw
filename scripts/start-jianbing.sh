@@ -90,7 +90,7 @@ docker run -d \
   -e OPENCLAW_MODEL="${JIANBING_MODEL:-minimax/MiniMax-M2.5}" \
   -v "$PROJECT_ROOT/shared:/shared:rw" \
   -v "$WORKSPACE_PATH:/workspace:rw" \
-  -v "$PROJECT_ROOT/config/jianbing:/app/.openclaw/workspace:ro" \
+  -v "$PROJECT_ROOT/config/jianbing:/app/.openclaw/workspace:rw" \
   -v "$HOME/.gitconfig:/root/.gitconfig:ro" \
   -v "$HOME/.ssh:/root/.ssh:ro" \
   -v "$PROJECT_ROOT/config/jianbing/.openclaw:/root/.openclaw:rw" \
@@ -166,28 +166,37 @@ docker exec jianbing-claw-container bash -c "
     \"defaults\": {
       \"model\": { \"primary\": \"minimax-cn/MiniMax-M2.5\" },
       \"models\": { \"minimax-cn/MiniMax-M2.5\": { \"alias\": \"MiniMax\" } },
-      \"workspace\": \"/app/.openclaw/.openclaw/workspace\",
+      \"workspace\": \"/app/.openclaw/workspace\",
       \"compaction\": { \"mode\": \"safeguard\" }
     }
   },
   \"gateway\": { \"mode\": \"local\" }
 }
 CONFIG
-  # 创建auth-profiles.json
-  mkdir -p /app/.openclaw/.openclaw/agents/main/agent && \
-  cat > /app/.openclaw/.openclaw/agents/main/agent/auth-profiles.json << 'AUTH'
-{
-  \"profiles\": [
-    {
-      \"id\": \"minimax-cn:manual\",
-      \"provider\": \"minimax-cn\",
-      \"type\": \"apiKey\",
-      \"key\": \"$MINIMAX_API_KEY\"
-    }
-  ]
-}
-AUTH
 "
+
+# 创建auth-profiles.json（在宿主机生成，复制到容器）
+echo "Creating auth-profiles.json with API key..."
+docker exec jianbing-claw-container bash -c "mkdir -p /app/.openclaw/.openclaw/agents/main/agent"
+
+# 在宿主机生成正确的 JSON 文件
+AUTH_FILE=$(mktemp)
+cat > "$AUTH_FILE" << EOF
+{
+  "version": 1,
+  "profiles": {
+    "minimax-cn:default": {
+      "type": "api_key",
+      "provider": "minimax-cn",
+      "key": "$JIANBING_API_KEY"
+    }
+  }
+}
+EOF
+
+# 复制到容器
+docker cp "$AUTH_FILE" jianbing-claw-container:/app/.openclaw/.openclaw/agents/main/agent/auth-profiles.json
+rm "$AUTH_FILE"
 
 echo "✅ OpenClaw初始化完成"
 
