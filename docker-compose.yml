@@ -11,9 +11,14 @@ services:
       dockerfile: Dockerfile
     container_name: jianbing-claw-container
     hostname: jianbing
-    
+
+    # 使用 entrypoint 自动配置
+    entrypoint: ["/scripts/entrypoint.sh"]
+    command: ["openclaw", "gateway", "--port", "18789", "--allow-unconfigured"]
+
     # 环境变量
     environment:
+      - HOME=/app
       - AGENT_NAME=jianbing
       - AGENT_ROLE=developer
       - GITHUB_TOKEN=${GITHUB_TOKEN}
@@ -21,9 +26,12 @@ services:
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-jianbing@docker-claw.local}
       - MINIMAX_API_KEY=${JIANBING_API_KEY}
       - OPENCLAW_MODEL=${JIANBING_MODEL:-minimax/MiniMax-M2.5}
-    
+
     # 挂载卷
     volumes:
+      # 启动脚本
+      - ./scripts/entrypoint.sh:/scripts/entrypoint.sh:ro
+
       # 共享目录
       - ./shared:/shared:rw
       
@@ -31,7 +39,7 @@ services:
       - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
       
       # 煎饼的配置文件
-      - ./config/jianbing:/app/.openclaw/workspace:ro
+      - ./config/jianbing:/app/.openclaw/workspace:rw
       
       # Git配置（只读）
       - ${HOME}/.gitconfig:/root/.gitconfig:ro
@@ -54,19 +62,19 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 4G
+          cpus: '1'
+          memory: 2G
         reservations:
-          cpus: '0.5'
-          memory: 1G
-    
+          cpus: '0.25'
+          memory: 512M
+
     # 日志配置
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    
+
     # 依赖（如果有）
     # depends_on:
     #   - some-service
@@ -78,9 +86,14 @@ services:
       dockerfile: Dockerfile
     container_name: mozhi-claw-container
     hostname: mozhi
-    
+
+    # 使用 entrypoint 自动配置
+    entrypoint: ["/scripts/entrypoint.sh"]
+    command: ["openclaw", "gateway", "--port", "18789", "--allow-unconfigured"]
+
     # 环境变量
     environment:
+      - HOME=/app
       - AGENT_NAME=mozhi
       - AGENT_ROLE=reviewer
       - GITHUB_TOKEN=${GITHUB_TOKEN}
@@ -88,17 +101,20 @@ services:
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-mozhi@docker-claw.local}
       - ZHIPU_API_KEY=${MOZHI_API_KEY}
       - OPENCLAW_MODEL=${MOZHI_MODEL:-zhipu/glm-5}
-    
+
     # 挂载卷
     volumes:
+      # 启动脚本
+      - ./scripts/entrypoint.sh:/scripts/entrypoint.sh:ro
+
       # 共享目录
       - ./shared:/shared:rw
-      
+
       # Git仓库（工作空间）
       - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
-      
+
       # 墨汁儿的配置文件
-      - ./config/mozhi:/app/.openclaw/workspace:ro
+      - ./config/mozhi:/app/.openclaw/workspace:rw
       
       # Git配置（只读）
       - ${HOME}/.gitconfig:/root/.gitconfig:ro
@@ -121,12 +137,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 4G
+          cpus: '1'
+          memory: 2G
         reservations:
-          cpus: '0.5'
-          memory: 1G
-    
+          cpus: '0.25'
+          memory: 512M
+
     # 日志配置
     logging:
       driver: "json-file"

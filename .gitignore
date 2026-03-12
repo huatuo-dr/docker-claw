@@ -17,6 +17,7 @@ yarn.lock
 *.swp
 *.swo
 *~
+.claude/
 
 # OS
 .DS_Store
