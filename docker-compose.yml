@@ -1,9 +1,81 @@
 # Docker-Claw Multi-Agent Docker Compose
-# 编排刚子（宿主机）、煎饼（容器）、墨汁儿（容器）
+# 编排刚子-任务、刚子-监控（宿主机）、煎饼（容器）、墨汁儿（容器）
 
 version: '3.8'
 
 services:
+  # 刚子-任务 - 任务发布者
+  gangzi-task:
+    image: alpine:latest
+    container_name: gangzi-task
+    hostname: gangzi-task
+
+    # 直接运行脚本（不需要完整的OpenClaw环境）
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "gangzi-task started"
+        while true; do
+          sleep 60
+        done
+
+    # 挂载卷
+    volumes:
+      # 共享目录
+      - ./shared:/shared:rw
+      # 工作空间
+      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+
+    # 网络
+    networks:
+      - docker-claw-network
+
+    # 重启策略
+    restart: unless-stopped
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 刚子-监控 - 状态监控者
+  gangzi-monitor:
+    image: alpine:latest
+    container_name: gangzi-monitor
+    hostname: gangzi-monitor
+
+    # 直接运行脚本
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "gangzi-monitor started"
+        while true; do
+          sleep 60
+        done
+
+    # 挂载卷
+    volumes:
+      # 共享目录
+      - ./shared:/shared:rw
+      # 工作空间
+      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+
+    # 网络
+    networks:
+      - docker-claw-network
+
+    # 重启策略
+    restart: unless-stopped
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # 煎饼 - 开发者
   jianbing:
     build:

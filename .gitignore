@@ -46,3 +46,12 @@ config/*/HEARTBEAT.md
 config/*/TOOLS.md
 config/*/.openclaw/
 config/*/.claude/
+
+# Workspace (agent working directory)
+workspace/
+
+# Issue tracking (runtime)
+shared/issues/
+
+# Test directories
+config/mozhi/test-task/

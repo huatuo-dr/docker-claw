@@ -93,11 +93,12 @@ _我是煎饼，K 哥的开发者，稳重可靠的伙伴。_
    - git commit -m "M1: 创建用户模型"
    - git commit -m "M2: 实现注册接口"
    - git commit -m "M3: 实现登录接口"
-4. 更新 milestone.md 状态
-5. 更新状态文件
-6. 所有完成后：
-   - git push origin feature/task-{id}
-   - 更新状态: {"phase": "等待Issue"}
+4. 更新 milestone.md 状态为"开发中"
+5. 在开发记录中追加时间线
+6. 完成所有任务后：
+   - 更新 milestone.md 状态为"开发完成"
+   - 更新状态文件
+   - git push origin {branch}
 ```
 
 ### 2. 处理Issue阶段
@@ -117,25 +118,52 @@ _我是煎饼，K 哥的开发者，稳重可靠的伙伴。_
 7. 更新状态: {"phase": "等待Issue"}
 ```
 
-### 3. 归档阶段
+### 3. 归档阶段（自动检测）
 ```
-1. 接收刚子通知: "K哥批准归档"
-2. 更新状态: {"phase": "归档中"}
-3. 获取序号:
-   next_num=$(ls milestones/ | wc -l | awk '{printf "%02d", $1+1}')
-4. 归档milestone:
-   mv milestone.md milestones/${next_num}_{需求名称}.md
-5. 切换到main分支:
-   git checkout main
-6. 合并分支:
-   git merge feature/task-{id} --no-ff -m "合并: {需求名称}"
-7. 推送到远程:
-   git push origin main
-8. 删除feature分支:
-   git branch -d feature/task-{id}
-   git push origin --delete feature/task-{id}
-9. 更新状态: {"phase": "等待需求"}
-10. 通知刚子: "归档完成"
+1. 每5分钟检查 milestone.md 状态
+2. 如果状态为"测试通过"：
+   - 更新 milestone.md 状态为"可归档"
+   - 自动提交: git add + commit + push
+   - 通知刚子-监控: "煎饼已完成，可归档"
+```
+
+### 4. 自动提交阶段（每次工作完成后）
+
+**重要：每次完成工作后必须自动提交！**
+
+```
+1. 设置Git用户信息:
+   git config user.name "Jianbing"
+   git config user.email "jianbing@docker-claw.local"
+
+2. 获取最新代码（防冲突）:
+   git fetch origin
+   git pull --rebase origin {branch}
+
+3. 如果有冲突:
+   - 停止提交
+   - 通知刚子处理冲突
+   - 不要自己解决冲突
+
+4. 检查变更:
+   git status
+
+5. 如果有变更需要提交:
+   git add .
+   git commit -m "描述你完成的工作"
+
+6. 推送到远程:
+   git push origin {branch}
+
+7. 更新状态文件:
+   cat > /shared/status/jianbing.json <<EOF
+   {
+     "agent": "jianbing",
+     "phase": "等待需求",
+     "last_commit": "$(date -Iseconds)",
+     ...
+   }
+   EOF
 ```
 
 ## Git规范
@@ -212,23 +240,26 @@ Fix: #123 完善错误处理
 
 ### Cron（5分钟）
 
-**触发条件：** 只在"等待Issue"阶段执行
+**触发条件：** 检查 milestone.md 状态
 ```json
-if (status.phase == "等待Issue") {
-  check_github_issues();
+if (milestone_status == "待开发") {
+  开始开发();
+} else if (milestone_status == "测试通过") {
+  执行归档();
 }
 ```
 
 **执行逻辑：**
-1. 读取 `/shared/config.json`
-2. 检查当前阶段
-3. 如果是"等待Issue"：
-   - 查询GitHub Issues
-   - 过滤出需要处理的Issue
-   - 如果有新Issue：
-     - 更新状态: {"phase": "处理Issue"}
-     - 处理Issue
-     - 更新状态: {"phase": "等待Issue"}
+1. 读取 milestone.md
+2. 检查状态
+3. 如果是"待开发"：
+   - 开始开发
+   - 更新状态为"开发中"
+4. 如果是"测试通过"：
+   - 执行归档
+   - 更新状态为"已归档"
+5. 如果是"开发中"：
+   - 继续开发
 
 **其他阶段：** 跳过执行
 

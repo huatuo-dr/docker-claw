@@ -11,6 +11,18 @@ MODEL=${OPENCLAW_MODEL:-}
 echo "Agent: $AGENT_NAME"
 echo "Model: $MODEL"
 
+# 配置 Git 用户信息
+GIT_USER_NAME=${GIT_USER_NAME:-}
+GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
+if [ -n "$GIT_USER_NAME" ]; then
+    echo "配置 Git 用户名: $GIT_USER_NAME"
+    git config --global user.name "$GIT_USER_NAME"
+fi
+if [ -n "$GIT_USER_EMAIL" ]; then
+    echo "配置 Git 邮箱: $GIT_USER_EMAIL"
+    git config --global user.email "$GIT_USER_EMAIL"
+fi
+
 # Gateway 读取的配置文件位置（由于 HOME=/app）
 OPENCLAW_CONFIG="/app/.openclaw/openclaw.json"
 AGENT_AUTH="/app/.openclaw/agents/main/agent/auth-profiles.json"
