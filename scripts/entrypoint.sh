@@ -27,12 +27,23 @@ fi
 echo "配置 Git URL 重写（SSH 方式）"
 git config --global url."git@github.com:".insteadOf "https://github.com/"
 
+# 复制 Agent 配置文件（从 workspace 到 agent 目录）
+echo "复制 Agent 配置文件..."
+mkdir -p /app/.openclaw/agents/main/agent
+
+# 复制 SOUL.md 和 HEARTBEAT.md（如果存在）
+if [ -f "/app/.openclaw/workspace/SOUL.md" ]; then
+    cp /app/.openclaw/workspace/SOUL.md /app/.openclaw/agents/main/agent/
+    echo "已复制 SOUL.md"
+fi
+if [ -f "/app/.openclaw/workspace/HEARTBEAT.md" ]; then
+    cp /app/.openclaw/workspace/HEARTBEAT.md /app/.openclaw/agents/main/agent/
+    echo "已复制 HEARTBEAT.md"
+fi
+
 # Gateway 读取的配置文件位置（由于 HOME=/app）
 OPENCLAW_CONFIG="/app/.openclaw/openclaw.json"
 AGENT_AUTH="/app/.openclaw/agents/main/agent/auth-profiles.json"
-
-# 确保目录存在
-mkdir -p /app/.openclaw/agents/main/agent
 
 # 根据 Agent 类型配置模型
 if [ "$AGENT_NAME" = "jianbing" ]; then

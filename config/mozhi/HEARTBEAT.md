@@ -1,92 +1,34 @@
-# HEARTBEAT.md
+# 墨汁儿 Heartbeat 任务
 
-# 墨汁儿 Heartbeat 任务（每1分钟执行）
+cd /workspace
 
-## 任务：轮询 task-publish-repo
+# 克隆/更新 task-publish-repo
+if [ ! -d "task-publish-repo" ]; then
+  git clone git@github.com:huatuo-dr/task-publish-repo.git
+fi
 
-### 执行条件
-- 只在 agent 空闲时执行
+cd task-publish-repo
+git fetch origin
+git checkout master
+git pull origin master
 
-### 步骤
+# 读取任务配置
+REPO=$(cat task-config.json | grep -o '"repo"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+BRANCH=$(cat task-config.json | grep -o '"branch"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
 
-1. **准备工作目录**
-   ```bash
-   cd /workspace
-   ```
+# 克隆/更新开发仓库
+cd /workspace
+REPO_NAME=$(echo $REPO | sed 's|.*/||' | sed 's|\.git||')
 
-2. **克隆/更新 task-publish-repo**
-   ```bash
-   # 如果不存在则 clone
-   if [ ! -d "task-publish-repo" ]; then
-     git clone https://github.com/huatuo-dr/task-publish-repo.git
-   fi
+if [ ! -d "$REPO_NAME" ]; then
+  git clone "$REPO" "$REPO_NAME"
+fi
 
-   # 进入目录并拉取最新
-   cd task-publish-repo
-   git fetch origin
-   git checkout master
-   git pull origin master
-   ```
+cd $REPO_NAME
+git fetch origin
+git checkout "$BRANCH"
+git pull origin "$BRANCH"
 
-3. **读取任务配置**
-   ```bash
-   cat task-config.json
-   ```
-
-   获取 `repo` 和 `branch` 字段。
-
-4. **克隆/更新开发仓库**
-   ```bash
-   cd /workspace
-
-   # 从 repo URL 提取仓库名
-   REPO_NAME=$(basename $REPO .git)  # 如 test-task-repo
-
-   if [ ! -d "$REPO_NAME" ]; then
-     git clone $REPO $REPO_NAME
-   fi
-
-   cd $REPO_NAME
-   git fetch origin
-   git checkout $BRANCH
-   git pull origin $BRANCH
-   ```
-
-5. **读取 milestone.md**
-   ```bash
-   cat milestone.md
-   ```
-
-6. **根据测试状态执行**
-
-   - 如果状态是"待开发"：
-     - 开始编写测试用例
-     - 更新 milestone.md 中的测试状态为"用例开发中"
-     - 添加测试记录
-
-   - 如果状态是"用例开发中"：
-     - 继续编写用例
-     - 完成后更新状态为"用例完成"
-
-   - 如果状态是"用例完成"：
-     - 检查煎饼的开发状态
-     - 如果煎饼状态是"开发完成"，则开始测试
-     - 更新测试状态为"测试中"
-
-   - 如果状态是"测试中"：
-     - 继续测试
-     - 完成后更新状态为"测试完成"
-
-   - 如果状态是"测试完成"：
-     - 检查煎饼的修复状态
-     - 如果煎饼还在"修复中"，等待
-     - 如果煎饼不再修复，更新为"测试通过"
-
-   - 如果状态是"测试通过"：
-     - 不操作
-
-### 注意事项
-- 每次操作前先 git pull --rebase 防冲突
-- 如果遇到冲突，停止操作并通知刚子
-- 更新 milestone.md 后要提交并 push
-- 测试用例应该保存到 test/ 目录
+# 读取 milestone.md 状态
+MILESTONE_STATUS=$(grep -A1 "## 测试状态" milestone.md | grep "状态" | cut -d: -f2 | tr -d ' ')
+echo "当前测试状态: $MILESTONE_STATUS"
