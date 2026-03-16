@@ -23,6 +23,10 @@ if [ -n "$GIT_USER_EMAIL" ]; then
     git config --global user.email "$GIT_USER_EMAIL"
 fi
 
+# 配置 Git 使用 SSH 方式（解决 HTTPS 访问问题）
+echo "配置 Git URL 重写（SSH 方式）"
+git config --global url."git@github.com:".insteadOf "https://github.com/"
+
 # Gateway 读取的配置文件位置（由于 HOME=/app）
 OPENCLAW_CONFIG="/app/.openclaw/openclaw.json"
 AGENT_AUTH="/app/.openclaw/agents/main/agent/auth-profiles.json"

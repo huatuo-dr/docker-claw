@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # 刚子-任务 - 任务发布者
   gangzi-task:
-    image: alpine:latest
+    image: ubuntu:24.04
     container_name: gangzi-task
     hostname: gangzi-task
 
@@ -23,8 +23,8 @@ services:
     volumes:
       # 共享目录
       - ./shared:/shared:rw
-      # 工作空间
-      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+      # 工作空间（刚子-任务专用）
+      - ${WORKSPACE_PATH:-./workspace/gangzi-task}:/workspace:rw
 
     # 网络
     networks:
@@ -42,7 +42,7 @@ services:
 
   # 刚子-监控 - 状态监控者
   gangzi-monitor:
-    image: alpine:latest
+    image: ubuntu:24.04
     container_name: gangzi-monitor
     hostname: gangzi-monitor
 
@@ -59,8 +59,8 @@ services:
     volumes:
       # 共享目录
       - ./shared:/shared:rw
-      # 工作空间
-      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+      # 工作空间（刚子-监控专用）
+      - ${WORKSPACE_PATH:-./workspace/gangzi-monitor}:/workspace:rw
 
     # 网络
     networks:
@@ -108,8 +108,8 @@ services:
       - ./shared:/shared:rw
       
       # Git仓库（工作空间）
-      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
-      
+      - ${WORKSPACE_PATH:-./workspace/jianbing}:/workspace:rw
+
       # 煎饼的配置文件
       - ./config/jianbing:/app/.openclaw/workspace:rw
       
@@ -183,7 +183,7 @@ services:
       - ./shared:/shared:rw
 
       # Git仓库（工作空间）
-      - ${WORKSPACE_PATH:-./workspace}:/workspace:rw
+      - ${WORKSPACE_PATH:-./workspace/mozhi}:/workspace:rw
 
       # 墨汁儿的配置文件
       - ./config/mozhi:/app/.openclaw/workspace:rw
