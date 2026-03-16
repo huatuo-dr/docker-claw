@@ -36,14 +36,14 @@ docker exec mozhi-claw-container openclaw agent --local --agent main --message "
 ## 重新部署
 
 ```bash
-# 1. 清除 workspace 内容（需要 sudo，如果没有权限可跳过）
-sudo rm -rf workspace/*
-
-# 2. 清除 status 目录残留文件（需要 sudo，如果没有权限可跳过）
-sudo rm -rf shared/status/*
-
-# 3. 删除 docker 容器
+# 1. 删除 docker 容器
 docker rm -f jianbing-claw-container mozhi-claw-container gangzi-task gangzi-monitor
+
+# 2. 清除 workspace 内容（在容器内用 root 删除）
+docker run --rm -v $(pwd)/workspace:/workspace root rm -rf /workspace/*
+
+# 3. 清除 status 目录残留文件（在容器内用 root 删除）
+docker run --rm -v $(pwd)/shared/status:/shared/status root rm -rf /shared/status/*
 
 # 4. 重新创建容器
 docker-compose up -d
@@ -56,4 +56,4 @@ docker exec jianbing-claw-container openclaw agent --local --agent main --messag
 docker exec mozhi-claw-container openclaw agent --local --agent main --message "你是谁"
 ```
 
-**注意**：workspace 目录中的文件可能属于 root 用户，需要 sudo 权限删除。如果 sudo 不可用，可以进入容器后用 root 权限删除。
+**说明**：workspace 和 shared/status 中的文件属于容器内的 root 用户，需要用 root 容器来删除。
