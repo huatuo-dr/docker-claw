@@ -43,6 +43,15 @@ def main():
         branch_safe = args.branch.replace("/", "-")
         status_dir = f"/shared/{args.repo}/{branch_safe}"
         status_file = f"{status_dir}/jianbing-status.json"
+    elif args.clear_task:
+        # when clearing task, try to find existing status file from /shared/
+        import glob
+        found = glob.glob("/shared/*/*/jianbing-status.json")
+        if found:
+            status_file = found[0]
+        else:
+            print("ERROR: --clear-task but no existing status file found")
+            raise SystemExit(1)
     else:
         print("ERROR: need --repo + --branch or --status-file")
         raise SystemExit(1)

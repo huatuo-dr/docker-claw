@@ -41,10 +41,13 @@ if [ ! -f "milestone.md" ]; then
 fi
 ```
 
-### 3. 更新状态为"开发中"
+### 3. 获取当前测试轮次并更新状态
 
 ```bash
-python3 /scripts/write_status.py --phase "开发中" --repo "$REPO_NAME" --branch "$BRANCH"
+# get current test round (0 if first time developing)
+current_round=$(python3 /scripts/parse_milestone.py --get-test-round milestone.md)
+
+python3 /scripts/write_status.py --phase "开发中" --repo "$REPO_NAME" --branch "$BRANCH" --test-round "$current_round"
 ```
 
 ### 4. 读取并解析 milestone.md
@@ -71,16 +74,11 @@ for milestone_num in $PENDING; do
   echo "开始处理 里程碑 $milestone_num"
   echo "========================================"
 
-  # get milestone details via Python
-  goal=$(python3 -c "
-import json, sys
-data = json.loads(open('milestone.md.parsed.json' if False else '/dev/stdin').read())
-ms = [m for m in data['milestones'] if m['number'] == $milestone_num]
-print(ms[0]['goal'] if ms else '')
-" < <(python3 /scripts/parse_milestone.py milestone.md))
+  # get milestone goal via Python
+  goal=$(python3 /scripts/parse_milestone.py --goal $milestone_num milestone.md)
 
-  # update milestone status to "进行中"
-  sed -i "/## 里程碑 $milestone_num/,/状态:/ s/⬜ 待开始/🔄 进行中/" milestone.md
+  # update milestone status to "进行中" via Python
+  python3 /scripts/parse_milestone.py --update-status "${milestone_num}:🔄" milestone.md
 
   # === AI generates and writes code here ===
 
@@ -89,8 +87,8 @@ print(ms[0]['goal'] if ms else '')
   git commit -m "M${milestone_num}: ${goal}"
   total_commits=$((total_commits + 1))
 
-  # update milestone status to "已完成"
-  sed -i "/## 里程碑 $milestone_num/,/状态:/ s/🔄 进行中/✅ 已完成/" milestone.md
+  # update milestone status to "已完成" via Python
+  python3 /scripts/parse_milestone.py --update-status "${milestone_num}:✅" milestone.md
 
   echo "✅ 里程碑 $milestone_num 完成"
 done
@@ -101,15 +99,19 @@ done
 ```bash
 echo "开始本地测试..."
 
-if [ -f "package.json" ]; then
-  npm test
-elif [ -f "requirements.txt" ]; then
-  python -m pytest
-elif [ -f "go.mod" ]; then
-  go test ./...
-fi
+test_result=0
 
-test_result=$?
+if [ -f "package.json" ]; then
+  npm test || test_result=$?
+elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+  python -m pytest || test_result=$?
+elif [ -f "go.mod" ]; then
+  go test ./... || test_result=$?
+elif [ -f "Cargo.toml" ]; then
+  cargo test || test_result=$?
+else
+  echo "未检测到测试框架，跳过测试"
+fi
 
 if [[ $test_result -ne 0 ]]; then
   echo "❌ 测试失败，不push"
@@ -122,11 +124,14 @@ echo "✅ 测试通过"
 ### 7. 更新 milestone.md 开发状态并 Push
 
 ```bash
-# update milestone.md dev status
-sed -i 's/\*\*状态\*\*: 开发中/**状态**: 等待第1轮测试/' milestone.md
+# calculate next test round
+next_round=$((current_round + 1))
+
+# update dev status via Python
+python3 /scripts/parse_milestone.py --set-dev-status "等待第${next_round}轮测试" milestone.md
 
 git add .
-git commit -m "更新开发状态: 等待第1轮测试"
+git commit -m "更新开发状态: 等待第${next_round}轮测试"
 
 # push
 git push origin "$BRANCH"
@@ -136,10 +141,10 @@ git push origin "$BRANCH"
 
 ```bash
 python3 /scripts/write_status.py \
-  --phase "等待第1轮测试" \
+  --phase "等待第${next_round}轮测试" \
   --repo "$REPO_NAME" \
   --branch "$BRANCH" \
-  --test-round 1 \
+  --test-round $next_round \
   --commits $total_commits
 ```
 

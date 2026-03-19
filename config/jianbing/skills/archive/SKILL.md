@@ -62,7 +62,7 @@ git push origin "$BRANCH"
 ### 4. 更新最终状态
 
 ```bash
-python3 /scripts/write_status.py --phase "等待任务" --clear-task
+python3 /scripts/write_status.py --phase "等待任务" --clear-task --status-file "$STATUS_FILE"
 ```
 
 ---
