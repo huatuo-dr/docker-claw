@@ -4,78 +4,6 @@
 version: '3.8'
 
 services:
-  # 刚子-任务 - 任务发布者
-  gangzi-task:
-    image: ubuntu:24.04
-    container_name: gangzi-task
-    hostname: gangzi-task
-
-    # 直接运行脚本（不需要完整的OpenClaw环境）
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        echo "gangzi-task started"
-        while true; do
-          sleep 60
-        done
-
-    # 挂载卷
-    volumes:
-      # 共享目录
-      - ./shared:/shared:rw
-      # 工作空间（刚子-任务专用）
-      - ${WORKSPACE_PATH:-./workspace/gangzi-task}:/workspace:rw
-
-    # 网络
-    networks:
-      - docker-claw-network
-
-    # 重启策略
-    restart: unless-stopped
-
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # 刚子-监控 - 状态监控者
-  gangzi-monitor:
-    image: ubuntu:24.04
-    container_name: gangzi-monitor
-    hostname: gangzi-monitor
-
-    # 直接运行脚本
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        echo "gangzi-monitor started"
-        while true; do
-          sleep 60
-        done
-
-    # 挂载卷
-    volumes:
-      # 共享目录
-      - ./shared:/shared:rw
-      # 工作空间（刚子-监控专用）
-      - ${WORKSPACE_PATH:-./workspace/gangzi-monitor}:/workspace:rw
-
-    # 网络
-    networks:
-      - docker-claw-network
-
-    # 重启策略
-    restart: unless-stopped
-
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
   # 煎饼 - 开发者
   jianbing:
     build:
@@ -85,7 +13,7 @@ services:
     hostname: jianbing
 
     # 使用 entrypoint 自动配置
-    entrypoint: ["/scripts/entrypoint.sh"]
+    entrypoint: ["/entrypoint.sh"]
     command: ["openclaw", "gateway", "--port", "18789", "--allow-unconfigured"]
 
     # 环境变量
@@ -102,11 +30,14 @@ services:
     # 挂载卷
     volumes:
       # 启动脚本
-      - ./scripts/entrypoint.sh:/scripts/entrypoint.sh:ro
+      - ./scripts/entrypoint.sh:/entrypoint.sh:ro
+
+      # 煎饼的 Python 工具脚本
+      - ./config/jianbing/scripts:/scripts:ro
 
       # 共享目录
       - ./shared:/shared:rw
-      
+
       # Git仓库（工作空间）
       - ${WORKSPACE_PATH:-./workspace/jianbing}:/workspace:rw
 
@@ -160,7 +91,7 @@ services:
     hostname: mozhi
 
     # 使用 entrypoint 自动配置
-    entrypoint: ["/scripts/entrypoint.sh"]
+    entrypoint: ["/entrypoint.sh"]
     command: ["openclaw", "gateway", "--port", "18789", "--allow-unconfigured"]
 
     # 环境变量
@@ -177,7 +108,7 @@ services:
     # 挂载卷
     volumes:
       # 启动脚本
-      - ./scripts/entrypoint.sh:/scripts/entrypoint.sh:ro
+      - ./scripts/entrypoint.sh:/entrypoint.sh:ro
 
       # 共享目录
       - ./shared:/shared:rw

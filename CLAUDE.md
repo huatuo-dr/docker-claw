@@ -1,16 +1,16 @@
 # Docker-Claw
 
-多 Agent 协作开发系统（刚子+煎饼+墨汁儿）
+多 Agent 协作开发系统（负责人+开发者+审查员），各 Agent 独立工作，互不感知
 
 ## 仓库
 - 任务发布: huatuo-dr/task-publish-repo (master)
 - 开发: huatuo-dr/test-task-repo (task/*)
 
 ## 流程
-需求 → 刚子创里程碑 → 煎饼开发 → 墨汁儿审查 → 刚子归档 → 用户合并
+需求 → 负责人创里程碑 → 开发者开发 → 审查员测试 → 开发者归档 → 负责人合并分支
 
 ## 状态
-待开发 → 开发中 → 开发完成 → 测试计划完成 → 测试中 → 测试通过 → 可归档 → 已归档
+待开发 → 开发中 → 等待第N轮测试 → 第N轮测试修复中 → ... → 可归档 → 执行归档 → 等待任务
 
 ## 规范
 - 提交: `{角色}: {描述}` (如 `煎饼: M1: 实现登录`)
@@ -20,10 +20,10 @@
 
 ## 常用
 ```bash
-# 触发煎饼
+# 触发开发者
 docker exec jianbing-claw-container openclaw agent --local --agent main --message "..."
 
-# 触发墨汁儿
+# 触发审查员
 docker exec mozhi-claw-container openclaw agent --local --agent main --message "..."
 ```
 
@@ -37,23 +37,20 @@ docker exec mozhi-claw-container openclaw agent --local --agent main --message "
 
 ```bash
 # 1. 删除 docker 容器
-docker rm -f jianbing-claw-container mozhi-claw-container gangzi-task gangzi-monitor
+docker rm -f jianbing-claw-container mozhi-claw-container
 
 # 2. 清除 workspace 内容（在容器内用 root 删除）
 docker run --rm -v $(pwd)/workspace:/workspace root rm -rf /workspace/*
 
-# 3. 清除 status 目录残留文件（在容器内用 root 删除）
-docker run --rm -v $(pwd)/shared/status:/shared/status root rm -rf /shared/status/*
+# 3. 清除 shared 目录残留状态文件（在容器内用 root 删除）
+docker run --rm -v $(pwd)/shared:/shared root find /shared -name "*-status.json" -delete
 
 # 4. 重新创建容器
 docker-compose up -d
 
-# 5. 删除多余的 gangzi 容器（如果有）
-docker rm -f gangzi-task gangzi-monitor
-
-# 6. 等待容器启动后，分别对话一次
+# 5. 等待容器启动后，分别对话一次
 docker exec jianbing-claw-container openclaw agent --local --agent main --message "你是谁"
 docker exec mozhi-claw-container openclaw agent --local --agent main --message "你是谁"
 ```
 
-**说明**：workspace 和 shared/status 中的文件属于容器内的 root 用户，需要用 root 容器来删除。
+**说明**：workspace 和 shared 中的状态文件属于容器内的 root 用户，需要用 root 容器来删除。

@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     vim \
     sudo \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装Node.js
@@ -44,8 +45,9 @@ RUN mkdir -p /app/.openclaw/workspace
 # 创建共享目录挂载点
 RUN mkdir -p /shared
 
-# 复制配置文件（由启动脚本动态挂载）
-# 这里不复制，使用volume挂载
+# 配置文件通过 docker-compose volume 挂载
+# entrypoint.sh 挂载到 /entrypoint.sh
+# Python 脚本挂载到 /scripts/
 
 # 设置Git配置（由启动脚本动态设置）
 # 这里不设置，使用环境变量
