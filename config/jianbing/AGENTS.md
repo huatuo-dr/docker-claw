@@ -26,7 +26,7 @@ Don't ask permission. Just do it.
 3. **Git操作** - 本地 commit，完成后 push
 4. **质量保障** - 本地测试，遵循规范
 5. **修复问题** - 根据审查意见修复代码
-6. **归档任务** - 检测到可归档后移动 milestone + push
+6. **归档任务** - 检测到 milestone.md 总状态为"可归档"后移动 milestone + push
 
 ## Memory
 
@@ -50,7 +50,7 @@ Don't ask permission. Just do it.
 ├── task-publish-repo/       # 任务发布仓库（轮询用）
 │   └── task-config.json     # 任务配置
 ├── {repo}/                  # 开发仓库（根据 task-config 克隆）
-│   ├── milestone.md         # 当前任务（我读写开发状态）
+│   ├── milestone.md         # 当前任务（唯一工作流来源）
 │   ├── milestones/          # 归档目录（我操作）
 │   ├── src/                 # 源代码（我编写）
 │   └── tests/               # 测试代码（我编写）
@@ -66,7 +66,7 @@ Don't ask permission. Just do it.
 └── memory/
 
 /shared/{repo}/{branch}/     # 状态暴露目录
-└── jianbing-status.json     # 我的状态（我负责读写）
+└── jianbing-status.json     # 我的观测状态（我负责写入）
 ```
 
 ## Safety
@@ -74,9 +74,10 @@ Don't ask permission. Just do it.
 - Don't exfiltrate private data. Ever.
 - Don't run destructive commands without asking.
 - **不要push未完成的代码** — 所有milestone完成后才push
-- **不要擅自归档** — 必须检测到 milestone.md 状态为"可归档"
+- **不要擅自归档** — 必须检测到 milestone.md 总状态为"可归档"
 - **不要跳过本地测试** — push前必须测试
 - **不要修改 milestone.md 中的测试状态** — 审查员负责
+- **不要用状态文件做决策** — `/shared/.../jianbing-status.json` 仅用于对外暴露
 
 ## Work Style
 
@@ -187,7 +188,7 @@ git push origin {branch}
 
 ### 1. develop（开发功能）
 
-**触发：** Heartbeat 检测到新任务（milestone.md 存在且开发状态为"待开发"）
+**触发：** Heartbeat 检测到新任务，或开发状态为"开发中"/"第N轮测试修复中"
 
 **步骤：**
 1. 读取 milestone.md
@@ -195,22 +196,22 @@ git push origin {branch}
 3. 本地 commit（多个）
 4. 更新 milestone.md 开发状态
 5. 所有完成后 push
-6. 更新 `/shared/{repo}/{branch}/jianbing-status.json`
+6. 更新 `/shared/{repo}/{branch}/jianbing-status.json` 观测快照
 
 ### 2. archive（归档任务）
 
-**触发：** Heartbeat 检测到 milestone.md 状态为"可归档"
+**触发：** Heartbeat 检测到 milestone.md 总状态为"可归档"
 
 **步骤：**
 1. 移动 milestone.md 到 milestones/
 2. git add + commit + push
-3. 更新 jianbing-status.json 状态为"等待任务"
+3. 更新 jianbing-status.json 观测状态为"等待任务"
 
 ## 状态文件
 
 **读写：**
-- `/shared/{repo}/{branch}/jianbing-status.json` - 我的状态（{branch} 中 `/` 替换为 `-`）
-- `/workspace/{repo}/milestone.md` - 更新开发状态和进度
+- `/workspace/{repo}/milestone.md` - 唯一工作流来源，更新开发状态和进度
+- `/shared/{repo}/{branch}/jianbing-status.json` - 我的观测状态（{branch} 中 `/` 替换为 `-`）
 
 **只读：**
 - `task-publish-repo/task-config.json` - 任务配置（轮询用）
@@ -219,7 +220,7 @@ git push origin {branch}
 
 ### 1. 状态更新
 
-每次操作后更新 jianbing-status.json：
+每次操作后更新 jianbing-status.json 作为观测快照：
 - 开始开发 → phase: "开发中"
 - push完成 → phase: "等待第N轮测试"
 - 修复完成 → phase: "等待第N+1轮测试"

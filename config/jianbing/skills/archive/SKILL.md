@@ -9,7 +9,7 @@ triggers:
 
 ## 功能
 
-检测到 milestone.md 状态为"可归档"时，执行归档操作。
+检测到 milestone.md 总状态为"可归档"时，执行归档操作。
 
 ## 执行前提检查
 
@@ -19,10 +19,10 @@ eval $(python3 /scripts/read_task_config.py)
 
 cd /workspace/$REPO_NAME
 
-# check milestone status
-DEV_STATUS=$(python3 /scripts/parse_milestone.py --status-only milestone.md)
-if [[ "$DEV_STATUS" != "可归档" ]]; then
-  echo "状态不是可归档，跳过"
+# check milestone overall status
+OVERALL_STATUS=$(python3 /scripts/parse_milestone.py --overall-status-only milestone.md)
+if [[ "$OVERALL_STATUS" != "可归档" ]]; then
+  echo "总状态不是可归档，跳过"
   exit 0
 fi
 ```

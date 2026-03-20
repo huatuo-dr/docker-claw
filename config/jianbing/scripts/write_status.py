@@ -3,17 +3,17 @@
 
 Usage:
     python3 write_status.py --phase "开发中" --repo test-task-repo --branch task/login
-    python3 write_status.py --phase "等待任务" --clear-task
+    python3 write_status.py --phase "等待任务" --clear-task --status-file /shared/test-task-repo/task-login/jianbing-status.json
     python3 write_status.py --phase "等待第1轮测试" --repo test-task-repo --branch task/login --test-round 1 --commits 3
 
 Options:
     --phase         Required. Current phase.
-    --repo          Repo name (omit with --clear-task).
-    --branch        Branch name (omit with --clear-task).
+    --repo          Repo name (omit with --clear-task when --status-file is used).
+    --branch        Branch name (omit with --clear-task when --status-file is used).
     --test-round    Test round number (default: 0).
     --commits       Local commit count (default: 0).
     --clear-task    Set current_task to null.
-    --status-file   Override status file path (default: auto-resolved from repo/branch).
+    --status-file   Override status file path (recommended for --clear-task).
 """
 
 import argparse
@@ -44,14 +44,8 @@ def main():
         status_dir = f"/shared/{args.repo}/{branch_safe}"
         status_file = f"{status_dir}/jianbing-status.json"
     elif args.clear_task:
-        # when clearing task, try to find existing status file from /shared/
-        import glob
-        found = glob.glob("/shared/*/*/jianbing-status.json")
-        if found:
-            status_file = found[0]
-        else:
-            print("ERROR: --clear-task but no existing status file found")
-            raise SystemExit(1)
+        print("ERROR: --clear-task requires --status-file or --repo + --branch")
+        raise SystemExit(1)
     else:
         print("ERROR: need --repo + --branch or --status-file")
         raise SystemExit(1)
@@ -59,14 +53,21 @@ def main():
     # ensure directory exists
     os.makedirs(os.path.dirname(status_file), exist_ok=True)
 
+    existing = {}
+    if os.path.exists(status_file):
+        with open(status_file, "r", encoding="utf-8") as f:
+            existing = json.load(f)
+
+    existing_detail = existing.get("phase_detail", {}) if isinstance(existing, dict) else {}
+
     # build status object
     if args.clear_task:
         current_task = None
         phase_detail = {
-            "started_at": None,
+            "started_at": existing_detail.get("started_at"),
             "test_round": 0,
             "local_commits": 0,
-            "last_push_at": None,
+            "last_push_at": existing_detail.get("last_push_at"),
         }
     else:
         current_task = {
@@ -74,10 +75,12 @@ def main():
             "branch": args.branch,
         }
         phase_detail = {
-            "started_at": now,
+            "started_at": existing_detail.get("started_at") or now,
             "test_round": args.test_round,
             "local_commits": args.commits,
-            "last_push_at": now if args.phase != "开发中" else None,
+            "last_push_at": (
+                now if args.phase != "开发中" else existing_detail.get("last_push_at")
+            ),
         }
 
     status = {

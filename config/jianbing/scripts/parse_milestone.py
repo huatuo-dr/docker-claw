@@ -4,6 +4,8 @@
 Usage:
     python3 parse_milestone.py [milestone_path]
     python3 parse_milestone.py --status-only [milestone_path]
+    python3 parse_milestone.py --test-status-only [milestone_path]
+    python3 parse_milestone.py --overall-status-only [milestone_path]
     python3 parse_milestone.py --pending-only [milestone_path]
     python3 parse_milestone.py --goal 1 [milestone_path]
     python3 parse_milestone.py --update-status 1:🔄 [milestone_path]
@@ -12,6 +14,7 @@ Usage:
 
 Default output (JSON):
     {
+        "overall_status": "待开发",
         "dev_status": "待开发",
         "test_status": "待开发",
         "milestones": [
@@ -22,7 +25,9 @@ Default output (JSON):
         "completed": [2]
     }
 
---status-only:      output dev_status (plain text)
+--status-only:      output dev_status (plain text, compatibility alias)
+--test-status-only: output test_status (plain text)
+--overall-status-only: output overall_status (plain text)
 --pending-only:     output pending milestone numbers (space-separated)
 --goal N:           output goal text for milestone N
 --update-status N:S update milestone N status (S: ⬜/🔄/✅)
@@ -39,6 +44,9 @@ def parse_milestone(filepath):
     """Parse milestone.md and return structured data."""
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
+
+    overall_match = re.search(r"^## 状态:\s*(.+)$", content, re.MULTILINE)
+    overall_status = overall_match.group(1).strip() if overall_match else "unknown"
 
     # extract dev status
     dev_match = re.search(r"## 开发状态.*?\n.*?\*\*状态\*\*:\s*(.+)", content)
@@ -89,6 +97,7 @@ def parse_milestone(filepath):
         })
 
     return {
+        "overall_status": overall_status,
         "dev_status": dev_status,
         "test_status": test_status,
         "milestones": milestones,
@@ -156,6 +165,8 @@ def get_test_round(dev_status):
 
 def main():
     status_only = "--status-only" in sys.argv
+    test_status_only = "--test-status-only" in sys.argv
+    overall_status_only = "--overall-status-only" in sys.argv
     pending_only = "--pending-only" in sys.argv
     get_round = "--get-test-round" in sys.argv
 
@@ -208,8 +219,10 @@ def main():
     try:
         result = parse_milestone(filepath)
     except FileNotFoundError:
-        if status_only or get_round:
-            print("not_found" if status_only else "0")
+        if status_only or test_status_only or overall_status_only:
+            print("not_found")
+        elif get_round:
+            print("0")
         elif pending_only or goal_num is not None:
             print("")
         else:
@@ -218,6 +231,10 @@ def main():
 
     if status_only:
         print(result["dev_status"])
+    elif test_status_only:
+        print(result["test_status"])
+    elif overall_status_only:
+        print(result["overall_status"])
     elif pending_only:
         print(" ".join(str(n) for n in result["pending"]))
     elif goal_num is not None:

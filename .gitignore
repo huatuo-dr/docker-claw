@@ -35,6 +35,8 @@ docker-compose.override.yml
 dist/
 build/
 *.tar.gz
+__pycache__/
+*.py[cod]
 
 # Runtime files (auto-generated)
 shared/config.json

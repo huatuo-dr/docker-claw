@@ -33,14 +33,16 @@ mkdir -p "$STATUS_DIR"
 # === 5. read milestone.md and decide action ===
 if [ -f "milestone.md" ]; then
   DEV_STATUS=$(python3 /scripts/parse_milestone.py --status-only milestone.md)
+  OVERALL_STATUS=$(python3 /scripts/parse_milestone.py --overall-status-only milestone.md)
   echo "当前开发状态: $DEV_STATUS"
+  echo "当前总状态: $OVERALL_STATUS"
 
-  case "$DEV_STATUS" in
-    "待开发")
+  if [ "$OVERALL_STATUS" = "可归档" ]; then
+    echo "ACTION: start archive"
+  else
+    case "$DEV_STATUS" in
+    "待开发"|"开发中")
       echo "ACTION: start develop"
-      ;;
-    "可归档")
-      echo "ACTION: start archive"
       ;;
     *修复中*)
       echo "ACTION: continue fix"
@@ -48,7 +50,8 @@ if [ -f "milestone.md" ]; then
     *)
       echo "ACTION: none (status=$DEV_STATUS)"
       ;;
-  esac
+    esac
+  fi
 else
   echo "No milestone.md found, waiting for task"
 fi
