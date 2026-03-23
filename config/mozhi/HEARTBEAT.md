@@ -13,13 +13,10 @@ git checkout master
 git pull origin master
 
 # 读取任务配置
-REPO=$(cat task-config.json | grep -o '"repo"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
-BRANCH=$(cat task-config.json | grep -o '"branch"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+eval $(python3 /scripts/read_task_config.py)
 
 # 克隆/更新开发仓库
 cd /workspace
-REPO_NAME=$(echo $REPO | sed 's|.*/||' | sed 's|\.git||')
-
 if [ ! -d "$REPO_NAME" ]; then
   git clone "$REPO" "$REPO_NAME"
 fi
@@ -29,6 +26,16 @@ git fetch origin
 git checkout "$BRANCH"
 git pull origin "$BRANCH"
 
-# 读取 milestone.md 状态
-MILESTONE_STATUS=$(grep -A1 "## 测试状态" milestone.md | grep "状态" | cut -d: -f2 | tr -d ' ')
-echo "当前测试状态: $MILESTONE_STATUS"
+# 读取 task.json 状态
+if [ -f "task.json" ]; then
+  DEV_STATUS=$(python3 /scripts/parse_task.py --developer-status-only task.json)
+  REVIEW_STATUS=$(python3 /scripts/parse_task.py --reviewer-status-only task.json)
+  REVIEW_RESULT=$(python3 /scripts/parse_task.py --review-result-only task.json)
+  ROUND=$(python3 /scripts/parse_task.py --round-only task.json)
+  echo "当前开发者状态: $DEV_STATUS"
+  echo "当前审查者状态: $REVIEW_STATUS"
+  echo "当前审查结果: $REVIEW_RESULT"
+  echo "当前轮次: $ROUND"
+else
+  echo "No task.json found, waiting for task"
+fi

@@ -110,6 +110,9 @@ services:
       # 启动脚本
       - ./scripts/entrypoint.sh:/entrypoint.sh:ro
 
+      # 墨汁儿的 Python 工具脚本
+      - ./config/mozhi/scripts:/scripts:ro
+
       # 共享目录
       - ./shared:/shared:rw
 

@@ -7,80 +7,61 @@ triggers:
 
 # Check Commits Skill
 
-## 执行前提检查
-
-```bash
-config=$(cat /shared/config.json)
-status=$(cat /shared/status/mozhi.json)
-
-# 只在开发状态执行
-if [[ $(echo "$config" | jq -r '.status') != "in_progress" ]]; then
-  exit 0
-fi
-
-# 只在特定阶段执行
-phase=$(echo "$status" | jq -r '.phase')
-if [[ "$phase" != "等待开发提交" && "$phase" != "等待Issue回复" ]]; then
-  exit 0
-fi
-```
-
 ## 执行步骤
 
-### 1. 读取配置
+### 1. 读取任务配置并同步仓库
 
 ```bash
-target_branch=$(echo "$config" | jq -r '.current_task.target_branch')
-last_checked=$(echo "$status" | jq -r '.phase_detail.last_checked_commit // ""')
-```
+eval $(python3 /scripts/read_task_config.py)
 
-### 2. 拉取最新代码
-
-```bash
 cd /workspace
-git pull origin "$target_branch"
-```
-
-### 3. 检查commit历史
-
-```bash
-# 获取上次检查后的commits
-if [[ -n "$last_checked" ]]; then
-  commits=$(git log "$last_checked"..HEAD --oneline)
-else
-  # 首次检查，获取最近1小时的commits
-  commits=$(git log --since="1 hour ago" --oneline)
+if [ ! -d "$REPO_NAME" ]; then
+  git clone "$REPO" "$REPO_NAME"
 fi
 
-if [[ -z "$commits" ]]; then
-  echo "没有新的提交"
+cd "/workspace/$REPO_NAME"
+git fetch origin
+git checkout "$BRANCH"
+git pull origin "$BRANCH"
+```
+
+### 2. 检查 task.json 是否进入可审查状态
+
+```bash
+if [ ! -f "task.json" ]; then
+  echo "task.json 不存在"
+  exit 0
+fi
+
+developer_status=$(python3 /scripts/parse_task.py --developer-status-only task.json)
+review_result=$(python3 /scripts/parse_task.py --review-result-only task.json)
+review_round=$(python3 /scripts/parse_task.py --round-only task.json)
+
+if [[ "$developer_status" != "等待审查" ]]; then
+  echo "开发者当前不是等待审查"
+  exit 0
+fi
+
+if [[ "$review_result" != "pending" && "$review_result" != "changes_requested" ]]; then
+  echo "当前审查结果不需要继续审查"
   exit 0
 fi
 ```
 
-### 4. 更新状态
+### 3. 更新观测状态
 
 ```bash
-latest_commit=$(git log -1 --format="%H")
-
-cat /shared/status/mozhi.json | jq "
-  .phase = \"审查中\" |
-  .phase_detail.target_commit = \"$latest_commit\" |
-  .phase_detail.last_checked_commit = \"$latest_commit\" |
-  .last_update = \"$(date -Iseconds)\"
-" > /shared/status/mozhi.json.tmp
-
-mv /shared/status/mozhi.json.tmp /shared/status/mozhi.json
+python3 /scripts/write_status.py \
+  --phase "审查中" \
+  --repo "$REPO_NAME" \
+  --branch "$BRANCH" \
+  --review-round "$review_round"
 ```
 
-### 5. 调用review技能
+### 4. 调用 review 技能
 
 ```bash
-# 调用review技能
-call_skill "review" "{
-  \"commit\": \"$latest_commit\",
-  \"commits\": \"$commits\"
-}"
+call_skill "review"
 ```
 
 ---

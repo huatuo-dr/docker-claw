@@ -1,6 +1,6 @@
 ---
 name: review
-description: 审查代码
+description: 审查代码并将结果写入task.json
 triggers:
   - manual: true
 ---
@@ -9,92 +9,91 @@ triggers:
 
 ## 执行步骤
 
-### 1. 读取commit内容
+### 1. 读取任务配置和 task.json
 
 ```bash
-commit=$1
-commit_diff=$(git show "$commit" --stat)
-commit_files=$(git show "$commit" --name-only)
+eval $(python3 /scripts/read_task_config.py)
+cd "/workspace/$REPO_NAME"
+
+if [ ! -f "task.json" ]; then
+  echo "task.json 不存在"
+  exit 1
+fi
+
+current_round=$(python3 /scripts/parse_task.py --round-only task.json)
+task_title=$(python3 /scripts/parse_task.py --title-only task.json)
 ```
 
-### 2. 读取测试计划
+### 2. 执行测试
 
 ```bash
-task_id=$(cat /shared/config.json | jq -r '.current_task.id')
-test_plan=$(cat /workspace/tmp/${task_id}_test_plan.md)
+test_result=0
+passed=0
+failed=0
+test_cases=0
+
+if [ -f "package.json" ]; then
+  npm test || test_result=$?
+elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+  python -m pytest || test_result=$?
+elif [ -f "go.mod" ]; then
+  go test ./... || test_result=$?
+elif [ -f "Cargo.toml" ]; then
+  cargo test || test_result=$?
+else
+  echo "未检测到测试框架，按代码审查路径继续"
+fi
+
+if [[ $test_result -ne 0 ]]; then
+  failed=1
+  test_cases=1
+else
+  passed=1
+  test_cases=1
+fi
 ```
 
-### 3. 代码质量审查
-
-**检查项：**
-- [ ] 命名是否清晰
-- [ ] 注释是否完整
-- [ ] 代码结构是否合理
-- [ ] 是否遵循规范
-
-### 4. 安全审查
-
-**检查项：**
-- [ ] 是否有SQL注入风险
-- [ ] 是否有XSS风险
-- [ ] 密码是否加密
-- [ ] 是否有权限问题
-
-### 5. 执行测试
+### 3. 汇总审查结果
 
 ```bash
-# 运行单元测试
-npm test
+if [[ $failed -gt 0 ]]; then
+  issues='[
+    {
+      "id": 1,
+      "title": "自动化测试未通过",
+      "severity": "high",
+      "status": "open",
+      "source_round": '"$current_round"',
+      "resolved_in_round": null,
+      "comment": "至少一个测试命令执行失败，需要开发者修复后重新审查"
+    }
+  ]'
 
-# 记录结果
-passed=$(npm test 2>&1 | grep "passed" | awk '{print $1}')
-failed=$(npm test 2>&1 | grep "failed" | awk '{print $1}')
+  python3 /scripts/parse_task.py --replace-review-issues "$issues" task.json
+  python3 /scripts/parse_task.py --set-review-summary changes_requested "发现需要修复的问题，请开发者处理后重新提交审查" task.json
+  python3 /scripts/parse_task.py --set-reviewer-status "等待修复" task.json
+  python3 /scripts/parse_task.py --append-reviewer-note "第${current_round}轮审查发现问题，等待开发者修复" task.json
+  phase="等待修复"
+else
+  python3 /scripts/parse_task.py --replace-review-issues "[]" task.json
+  python3 /scripts/parse_task.py --set-review-summary passed "审查通过，可以归档" task.json
+  python3 /scripts/parse_task.py --set-reviewer-status "审查通过" task.json
+  python3 /scripts/parse_task.py --append-reviewer-note "第${current_round}轮审查通过" task.json
+  phase="审查通过"
+fi
 ```
 
-### 6. 汇总问题
+### 4. 更新观测状态
 
 ```bash
-bugs=()
-
-# 示例：发现3个问题
-bugs+=({
-  "id": 1,
-  "severity": "high",
-  "location": "src/auth/login.js:45",
-  "description": "密码未加密存储"
-})
-
-bugs+=({
-  "id": 2,
-  "severity": "medium",
-  "location": "src/auth/register.js:23",
-  "description": "缺少输入验证"
-})
-
-bugs+=({
-  "id": 3,
-  "severity": "low",
-  "location": "src/auth/login.js:67",
-  "description": "错误处理不完整"
-})
-```
-
-### 7. 决定下一步
-
-**如果有问题：**
-```bash
-# 调用create-issue技能
-call_skill "create-issue" "{
-  \"bugs\": $(echo "${bugs[@]}" | jq -R .)
-}"
-```
-
-**如果无问题：**
-```bash
-# 标记为审查通过
-call_skill "verify-fix" "{
-  \"approved\": true
-}"
+python3 /scripts/write_status.py \
+  --phase "$phase" \
+  --repo "$REPO_NAME" \
+  --branch "$BRANCH" \
+  --review-round "$current_round" \
+  --passed "$passed" \
+  --failed "$failed" \
+  --test-cases "$test_cases"
 ```
 
 ---
