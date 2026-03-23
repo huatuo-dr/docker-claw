@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docker-claw.local/schema/task.schema.json",
+  "title": "Docker-Claw Task Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "task",
+    "workflow",
+    "developer",
+    "reviewer",
+    "milestones",
+    "review",
+    "audit"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "task.json schema version"
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "repo",
+        "repo_name",
+        "branch",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "publisher",
+            "config_file"
+          ],
+          "properties": {
+            "publisher": {
+              "type": "string",
+              "minLength": 1
+            },
+            "config_file": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round",
+        "archived"
+      ],
+      "properties": {
+        "round": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "archived": {
+          "type": "boolean"
+        }
+      }
+    },
+    "developer": {
+      "$ref": "#/$defs/actorStateDeveloper"
+    },
+    "reviewer": {
+      "$ref": "#/$defs/actorStateReviewer"
+    },
+    "milestones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/milestone"
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "issues"
+      ],
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/reviewSummary"
+            }
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reviewIssue"
+          }
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "created_at",
+        "updated_at",
+        "archived_at"
+      ],
+      "properties": {
+        "created_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "archived_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "dateTimeOrNull": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "format": "date-time"
+        }
+      ]
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "at",
+        "message"
+      ],
+      "properties": {
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "actorStateDeveloper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "updated_at",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "待开发",
+            "开发中",
+            "等待审查",
+            "修复中",
+            "可归档",
+            "归档中",
+            "已完成"
+          ]
+        },
+        "updated_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/note"
+          }
+        }
+      }
+    },
+    "actorStateReviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "updated_at",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "待开发",
+            "待审查",
+            "测试设计中",
+            "审查中",
+            "等待修复",
+            "复审中",
+            "审查通过",
+            "审查失败"
+          ]
+        },
+        "updated_at": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/note"
+          }
+        }
+      }
+    },
+    "milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "goal",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "goal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "in_progress",
+            "done"
+          ]
+        }
+      }
+    },
+    "reviewSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "comment",
+        "updated_at"
+      ],
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "changes_requested",
+            "passed",
+            "failed"
+          ]
+        },
+        "comment": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "reviewIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "severity",
+        "status",
+        "source_round",
+        "resolved_in_round",
+        "comment"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "resolved",
+            "wont_fix"
+          ]
+        },
+        "source_round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resolved_in_round": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

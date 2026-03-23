@@ -1,6 +1,6 @@
 ---
 name: develop
-description: 开发功能，读取milestone.md并实现代码
+description: 开发功能，读取task.json并实现代码
 triggers:
   - manual: true
   - event: heartbeat_new_task
@@ -10,7 +10,7 @@ triggers:
 
 ## 功能
 
-读取 milestone.md，逐步实现功能代码。
+读取 task.json，逐步实现功能代码。
 
 ## 执行步骤
 
@@ -34,9 +34,9 @@ if [[ "$current_branch" != "$BRANCH" ]]; then
   exit 1
 fi
 
-# check milestone.md
-if [ ! -f "milestone.md" ]; then
-  echo "错误: milestone.md 不存在"
+# check task.json
+if [ ! -f "task.json" ]; then
+  echo "错误: task.json 不存在"
   exit 1
 fi
 ```
@@ -45,20 +45,33 @@ fi
 
 ```bash
 # get current test round (0 if first time developing)
-current_round=$(python3 /scripts/parse_milestone.py --get-test-round milestone.md)
+current_round=$(python3 /scripts/parse_task.py --round-only task.json)
+review_result=$(python3 /scripts/parse_task.py --review-result-only task.json)
+review_status=$(python3 /scripts/parse_task.py --reviewer-status-only task.json)
 
-python3 /scripts/write_status.py --phase "开发中" --repo "$REPO_NAME" --branch "$BRANCH" --test-round "$current_round"
+if [[ "$review_result" = "changes_requested" || "$review_status" = "等待修复" ]]; then
+  dev_phase="修复中"
+else
+  dev_phase="开发中"
+fi
+
+python3 /scripts/write_status.py --phase "$dev_phase" --repo "$REPO_NAME" --branch "$BRANCH" --test-round "$current_round"
+python3 /scripts/parse_task.py --set-developer-status "$dev_phase" task.json
 ```
 
-### 4. 读取并解析 milestone.md
+### 4. 读取并解析 task.json
 
 ```bash
 # get pending milestone numbers (space-separated)
-PENDING=$(python3 /scripts/parse_milestone.py --pending-only milestone.md)
+PENDING=$(python3 /scripts/parse_task.py --pending-only task.json)
 
 if [ -z "$PENDING" ]; then
-  echo "没有待完成的里程碑"
-  exit 0
+  if [[ "$review_result" = "changes_requested" || "$review_status" = "等待修复" ]]; then
+    echo "没有待完成的里程碑，按审查意见修复现有实现"
+  else
+    echo "没有待完成的里程碑"
+    exit 0
+  fi
 fi
 
 echo "待完成里程碑: $PENDING"
@@ -75,10 +88,11 @@ for milestone_num in $PENDING; do
   echo "========================================"
 
   # get milestone goal via Python
-  goal=$(python3 /scripts/parse_milestone.py --goal $milestone_num milestone.md)
+  goal=$(python3 /scripts/parse_task.py --goal $milestone_num task.json)
 
-  # update milestone status to "进行中" via Python
-  python3 /scripts/parse_milestone.py --update-status "${milestone_num}:🔄" milestone.md
+  # update milestone status to in_progress via Python
+  python3 /scripts/parse_task.py --set-milestone-status "${milestone_num}:in_progress" task.json
+  python3 /scripts/parse_task.py --append-developer-note "开始处理里程碑 ${milestone_num}" task.json
 
   # === AI generates and writes code here ===
 
@@ -87,11 +101,16 @@ for milestone_num in $PENDING; do
   git commit -m "M${milestone_num}: ${goal}"
   total_commits=$((total_commits + 1))
 
-  # update milestone status to "已完成" via Python
-  python3 /scripts/parse_milestone.py --update-status "${milestone_num}:✅" milestone.md
+  # update milestone status to done via Python
+  python3 /scripts/parse_task.py --set-milestone-status "${milestone_num}:done" task.json
+  python3 /scripts/parse_task.py --append-developer-note "完成里程碑 ${milestone_num}" task.json
 
   echo "✅ 里程碑 $milestone_num 完成"
 done
+
+if [[ -z "$PENDING" && "$dev_phase" = "修复中" ]]; then
+  python3 /scripts/parse_task.py --append-developer-note "根据审查意见进行修复" task.json
+fi
 ```
 
 ### 6. 本地测试
@@ -121,17 +140,19 @@ fi
 echo "✅ 测试通过"
 ```
 
-### 7. 更新 milestone.md 开发状态并 Push
+### 7. 更新 task.json 开发状态并 Push
 
 ```bash
 # calculate next test round
 next_round=$((current_round + 1))
 
-# update dev status via Python
-python3 /scripts/parse_milestone.py --set-dev-status "等待第${next_round}轮测试" milestone.md
+# update task.json via Python
+python3 /scripts/parse_task.py --set-round "$next_round" task.json
+python3 /scripts/parse_task.py --set-developer-status "等待审查" task.json
+python3 /scripts/parse_task.py --append-developer-note "提交开发结果，等待第${next_round}轮审查" task.json
 
 git add .
-git commit -m "更新开发状态: 等待第${next_round}轮测试"
+git commit -m "更新开发状态: 等待第${next_round}轮审查"
 
 # push
 git push origin "$BRANCH"
@@ -141,7 +162,7 @@ git push origin "$BRANCH"
 
 ```bash
 python3 /scripts/write_status.py \
-  --phase "等待第${next_round}轮测试" \
+  --phase "等待审查" \
   --repo "$REPO_NAME" \
   --branch "$BRANCH" \
   --test-round $next_round \

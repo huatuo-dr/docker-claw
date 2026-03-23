@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "task": {
+    "id": "TASK-001",
+    "title": "示例任务",
+    "repo": "git@github.com:your-org/your-repo.git",
+    "repo_name": "your-repo",
+    "branch": "task/example",
+    "source": {
+      "publisher": "task-publish-repo",
+      "config_file": "task-config.json"
+    }
+  },
+  "workflow": {
+    "round": 0,
+    "archived": false
+  },
+  "developer": {
+    "status": "待开发",
+    "updated_at": null,
+    "notes": []
+  },
+  "reviewer": {
+    "status": "待开发",
+    "updated_at": null,
+    "notes": []
+  },
+  "milestones": [
+    {
+      "id": 1,
+      "title": "里程碑 1",
+      "goal": "完成第一个子任务",
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "title": "里程碑 2",
+      "goal": "完成第二个子任务",
+      "status": "pending"
+    }
+  ],
+  "review": {
+    "summary": null,
+    "issues": []
+  },
+  "audit": {
+    "created_at": null,
+    "updated_at": null,
+    "archived_at": null
+  }
+}

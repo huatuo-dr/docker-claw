@@ -30,22 +30,23 @@ git pull origin "$BRANCH"
 # === 4. ensure status directory exists ===
 mkdir -p "$STATUS_DIR"
 
-# === 5. read milestone.md and decide action ===
-if [ -f "milestone.md" ]; then
-  DEV_STATUS=$(python3 /scripts/parse_milestone.py --status-only milestone.md)
-  OVERALL_STATUS=$(python3 /scripts/parse_milestone.py --overall-status-only milestone.md)
-  echo "当前开发状态: $DEV_STATUS"
-  echo "当前总状态: $OVERALL_STATUS"
+# === 5. read task.json and decide action ===
+if [ -f "task.json" ]; then
+  DEV_STATUS=$(python3 /scripts/parse_task.py --developer-status-only task.json)
+  REVIEW_STATUS=$(python3 /scripts/parse_task.py --reviewer-status-only task.json)
+  REVIEW_RESULT=$(python3 /scripts/parse_task.py --review-result-only task.json)
+  echo "当前开发者状态: $DEV_STATUS"
+  echo "当前审查者状态: $REVIEW_STATUS"
+  echo "当前审查结果: $REVIEW_RESULT"
 
-  if [ "$OVERALL_STATUS" = "可归档" ]; then
+  if [ "$REVIEW_RESULT" = "passed" ] || [ "$REVIEW_STATUS" = "审查通过" ]; then
     echo "ACTION: start archive"
+  elif [ "$REVIEW_RESULT" = "changes_requested" ] || [ "$REVIEW_STATUS" = "等待修复" ]; then
+    echo "ACTION: start develop"
   else
     case "$DEV_STATUS" in
-    "待开发"|"开发中")
+    "待开发"|"开发中"|"修复中")
       echo "ACTION: start develop"
-      ;;
-    *修复中*)
-      echo "ACTION: continue fix"
       ;;
     *)
       echo "ACTION: none (status=$DEV_STATUS)"
@@ -53,5 +54,5 @@ if [ -f "milestone.md" ]; then
     esac
   fi
 else
-  echo "No milestone.md found, waiting for task"
+  echo "No task.json found, waiting for task"
 fi

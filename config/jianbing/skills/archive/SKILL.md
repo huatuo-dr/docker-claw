@@ -1,6 +1,6 @@
 ---
 name: archive
-description: 归档任务，移动milestone到归档目录并push
+description: 归档任务，移动task.json到归档目录并push
 triggers:
   - event: heartbeat_archivable
 ---
@@ -9,7 +9,7 @@ triggers:
 
 ## 功能
 
-检测到 milestone.md 总状态为"可归档"时，执行归档操作。
+检测到 task.json 审查通过时，执行归档操作。
 
 ## 执行前提检查
 
@@ -19,23 +19,26 @@ eval $(python3 /scripts/read_task_config.py)
 
 cd /workspace/$REPO_NAME
 
-# check milestone overall status
-OVERALL_STATUS=$(python3 /scripts/parse_milestone.py --overall-status-only milestone.md)
-if [[ "$OVERALL_STATUS" != "可归档" ]]; then
-  echo "总状态不是可归档，跳过"
+# check review result
+REVIEW_RESULT=$(python3 /scripts/parse_task.py --review-result-only task.json)
+REVIEW_STATUS=$(python3 /scripts/parse_task.py --reviewer-status-only task.json)
+if [[ "$REVIEW_RESULT" != "passed" && "$REVIEW_STATUS" != "审查通过" ]]; then
+  echo "审查尚未通过，跳过"
   exit 0
 fi
 ```
 
 ## 执行步骤
 
-### 1. 更新状态为"执行归档"
+### 1. 更新状态为"归档中"
 
 ```bash
-python3 /scripts/write_status.py --phase "执行归档" --repo "$REPO_NAME" --branch "$BRANCH"
+python3 /scripts/write_status.py --phase "归档中" --repo "$REPO_NAME" --branch "$BRANCH"
+python3 /scripts/parse_task.py --set-developer-status "归档中" task.json
+python3 /scripts/parse_task.py --append-developer-note "开始归档任务" task.json
 ```
 
-### 2. 获取序号并移动 milestone
+### 2. 获取序号并移动 task.json
 
 ```bash
 # create milestones dir if not exists
@@ -44,11 +47,17 @@ mkdir -p milestones
 # get next number
 next_num=$(ls milestones/ 2>/dev/null | wc -l | awk '{printf "%02d", $1+1}')
 
-# extract task name from milestone.md title
-task_name=$(head -1 milestone.md | sed 's/^# Milestone: //')
+# update final task state before archive
+python3 /scripts/parse_task.py --set-archived true task.json
+python3 /scripts/parse_task.py --set-developer-status "已完成" task.json
+python3 /scripts/parse_task.py --append-developer-note "归档完成" task.json
+
+# extract task name from task.json
+task_name=$(python3 /scripts/parse_task.py --title-only task.json)
+task_name_safe=$(printf '%s' "$task_name" | tr '/:' '__')
 
 # move
-mv milestone.md "milestones/${next_num}_${task_name}.md"
+mv task.json "milestones/${next_num}_${task_name_safe}.json"
 ```
 
 ### 3. 提交并推送
@@ -71,7 +80,7 @@ python3 /scripts/write_status.py --phase "等待任务" --clear-task --status-fi
 
 1. **不做分支合并** — 分支合并由负责人处理
 2. **不删除分支** — 分支管理由负责人处理
-3. **仅移动+push** — 归档操作只移动 milestone.md 并推送
+3. **仅移动+push** — 归档操作只移动 task.json 并推送
 
 ---
 

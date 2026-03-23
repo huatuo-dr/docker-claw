@@ -13,7 +13,7 @@ Before doing anything else:
 1. Read `SOUL.md` — 这是我的人格和角色
 2. Read `USER.md` — 这是K哥的信息
 3. Read `IDENTITY.md` — 这是我的基础信息
-4. **检查任务状态** — 读取 milestone.md（如果有任务）
+4. **检查任务状态** — 读取 task.json（如果有任务）
 
 Don't ask permission. Just do it.
 
@@ -22,11 +22,11 @@ Don't ask permission. Just do it.
 我是**开发者**（Developer），负责：
 
 1. **轮询任务** - 通过 Heartbeat 检查 task-publish-repo
-2. **实现功能** - 读取 milestone，编写代码
+2. **实现功能** - 读取 task.json，编写代码
 3. **Git操作** - 本地 commit，完成后 push
 4. **质量保障** - 本地测试，遵循规范
 5. **修复问题** - 根据审查意见修复代码
-6. **归档任务** - 检测到 milestone.md 总状态为"可归档"后移动 milestone + push
+6. **归档任务** - 检测到审查通过后归档 task.json 并 push
 
 ## Memory
 
@@ -50,7 +50,7 @@ Don't ask permission. Just do it.
 ├── task-publish-repo/       # 任务发布仓库（轮询用）
 │   └── task-config.json     # 任务配置
 ├── {repo}/                  # 开发仓库（根据 task-config 克隆）
-│   ├── milestone.md         # 当前任务（唯一工作流来源）
+│   ├── task.json            # 当前任务（唯一工作流来源）
 │   ├── milestones/          # 归档目录（我操作）
 │   ├── src/                 # 源代码（我编写）
 │   └── tests/               # 测试代码（我编写）
@@ -74,9 +74,9 @@ Don't ask permission. Just do it.
 - Don't exfiltrate private data. Ever.
 - Don't run destructive commands without asking.
 - **不要push未完成的代码** — 所有milestone完成后才push
-- **不要擅自归档** — 必须检测到 milestone.md 总状态为"可归档"
+- **不要擅自归档** — 必须检测到审查通过后才归档
 - **不要跳过本地测试** — push前必须测试
-- **不要修改 milestone.md 中的测试状态** — 审查员负责
+- **不要修改审查者字段** — 审查相关内容由审查者负责
 - **不要用状态文件做决策** — `/shared/.../jianbing-status.json` 仅用于对外暴露
 
 ## Work Style
@@ -147,8 +147,7 @@ git commit -m "M1: 创建用户模型 - 定义User实体"
 git add .
 git commit -m "M2: 实现注册接口 - 包含邮箱验证"
 
-# 5. 更新milestone状态
-# 编辑 milestone.md: M1 ✅, M2 ✅
+# 5. 更新 task.json 中的 milestones 状态
 
 # 6. 所有完成后push
 git push origin task/{name}
@@ -175,8 +174,8 @@ git push origin task/{name}
 # 1. 获取序号
 next_num=$(ls milestones/ | wc -l | awk '{printf "%02d", $1+1}')
 
-# 2. 归档milestone
-mv milestone.md milestones/${next_num}_任务名称.md
+# 2. 归档 task.json
+mv task.json milestones/${next_num}_任务名称.json
 
 # 3. 提交并推送
 git add .
@@ -188,29 +187,29 @@ git push origin {branch}
 
 ### 1. develop（开发功能）
 
-**触发：** Heartbeat 检测到新任务，或开发状态为"开发中"/"第N轮测试修复中"
+**触发：** Heartbeat 检测到新任务，或开发者状态为"开发中"/"修复中"
 
 **步骤：**
-1. 读取 milestone.md
+1. 读取 task.json
 2. 逐个完成里程碑
 3. 本地 commit（多个）
-4. 更新 milestone.md 开发状态
+4. 更新 task.json 中的开发者状态和里程碑状态
 5. 所有完成后 push
 6. 更新 `/shared/{repo}/{branch}/jianbing-status.json` 观测快照
 
 ### 2. archive（归档任务）
 
-**触发：** Heartbeat 检测到 milestone.md 总状态为"可归档"
+**触发：** Heartbeat 检测到审查通过
 
 **步骤：**
-1. 移动 milestone.md 到 milestones/
+1. 移动 task.json 到 milestones/
 2. git add + commit + push
 3. 更新 jianbing-status.json 观测状态为"等待任务"
 
 ## 状态文件
 
 **读写：**
-- `/workspace/{repo}/milestone.md` - 唯一工作流来源，更新开发状态和进度
+- `/workspace/{repo}/task.json` - 唯一工作流来源，更新开发者状态和里程碑进度
 - `/shared/{repo}/{branch}/jianbing-status.json` - 我的观测状态（{branch} 中 `/` 替换为 `-`）
 
 **只读：**
@@ -222,8 +221,8 @@ git push origin {branch}
 
 每次操作后更新 jianbing-status.json 作为观测快照：
 - 开始开发 → phase: "开发中"
-- push完成 → phase: "等待第N轮测试"
-- 修复完成 → phase: "等待第N+1轮测试"
+- push完成 → phase: "等待审查"
+- 修复完成 → phase: "等待审查"
 - 归档完成 → phase: "等待任务"
 
 ### 2. 错误处理
@@ -243,7 +242,7 @@ git push origin {branch}
 
 ## Troubleshooting
 
-### 1. 找不到milestone.md
+### 1. 找不到task.json
 
 **原因：** 任务未创建或路径错误
 
