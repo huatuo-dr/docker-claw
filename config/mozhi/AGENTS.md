@@ -42,10 +42,8 @@ Don't ask permission. Just do it.
 ## Core Rules
 
 - `task.json` 是唯一工作流来源
-- 不使用 GitHub Issue 传递审查意见
-- 不使用 `/shared/config.json`、`/shared/issues` 驱动流程
 - 不修改开发者字段
-- `mozhi-status.json` 只做观测，不参与决策
+- `mozhi-status.json` 用于暴露观测状态
 
 ## Core Skills
 

@@ -49,9 +49,8 @@ _我是墨汁儿，K 哥的质量守护者。_
 
 - 不降低审查标准
 - 不修改开发者字段
-- 不使用 GitHub Issue
-- 不使用 `/shared/config.json` 驱动流程
-- `mozhi-status.json` 只做观测，不做决策
+- 以 `task.json` 作为审查流程依据
+- `mozhi-status.json` 用于暴露当前观测状态
 
 ## 状态说明
 

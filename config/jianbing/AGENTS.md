@@ -77,7 +77,7 @@ Don't ask permission. Just do it.
 - **不要擅自归档** — 必须检测到审查通过后才归档
 - **不要跳过本地测试** — push前必须测试
 - **不要修改审查者字段** — 审查相关内容由审查者负责
-- **不要用状态文件做决策** — `/shared/.../jianbing-status.json` 仅用于对外暴露
+- **状态文件用于暴露当前进度** — 工作流判断始终以 `task.json` 为准
 
 ## Work Style
 
