@@ -73,29 +73,16 @@ if [[ $failed -gt 0 ]]; then
   python3 /scripts/parse_task.py --set-review-summary changes_requested "发现需要修复的问题，请开发者处理后重新提交审查" task.json
   python3 /scripts/parse_task.py --set-reviewer-status "等待修复" task.json
   python3 /scripts/parse_task.py --append-reviewer-note "第${current_round}轮审查发现问题，等待开发者修复" task.json
-  phase="等待修复"
 else
   python3 /scripts/parse_task.py --replace-review-issues "[]" task.json
   python3 /scripts/parse_task.py --set-review-summary passed "审查通过，可以归档" task.json
   python3 /scripts/parse_task.py --set-reviewer-status "审查通过" task.json
   python3 /scripts/parse_task.py --append-reviewer-note "第${current_round}轮审查通过" task.json
-  phase="审查通过"
 fi
 ```
 
-### 4. 更新观测状态
+### 4. 结果落盘
 
-```bash
-python3 /scripts/write_status.py \
-  --phase "$phase" \
-  --repo "$REPO_NAME" \
-  --branch "$BRANCH" \
-  --review-round "$current_round" \
-  --passed "$passed" \
-  --failed "$failed" \
-  --test-cases "$test_cases"
-```
-
----
+审查结果已经写入 `task.json` 的 `review.summary`、`review.issues` 和 `reviewer.status`。
 
 _墨汁儿的技能：审查代码 🦊_

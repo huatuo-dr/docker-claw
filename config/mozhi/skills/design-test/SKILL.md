@@ -27,12 +27,6 @@ review_round=$(python3 /scripts/parse_task.py --round-only task.json)
 ### 2. 更新状态
 
 ```bash
-python3 /scripts/write_status.py \
-  --phase "测试设计中" \
-  --repo "$REPO_NAME" \
-  --branch "$BRANCH" \
-  --review-round "$review_round"
-
 python3 /scripts/parse_task.py --set-reviewer-status "测试设计中" task.json
 python3 /scripts/parse_task.py --append-reviewer-note "开始为任务设计测试计划" task.json
 ```
@@ -60,16 +54,11 @@ cat > /workspace/tmp/review-plan.md <<EOF
 EOF
 ```
 
-### 4. 更新 task.json 和观测状态
+### 4. 更新 task.json
 
 ```bash
 python3 /scripts/parse_task.py --set-reviewer-status "待审查" task.json
 python3 /scripts/parse_task.py --append-reviewer-note "测试计划已准备完成，等待开发者提交审查" task.json
-python3 /scripts/write_status.py \
-  --phase "待审查" \
-  --repo "$REPO_NAME" \
-  --branch "$BRANCH" \
-  --review-round "$review_round"
 ```
 
 ---

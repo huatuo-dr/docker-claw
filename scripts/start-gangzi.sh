@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "================================"
-echo "启动刚子（协调者）"
+echo "启动刚子（观察者）"
 echo "================================"
 echo ""
 
@@ -42,7 +42,7 @@ echo ""
 echo "📝 设置环境变量..."
 
 export AGENT_NAME="gangzi"
-export AGENT_ROLE="coordinator"
+export AGENT_ROLE="observer"
 
 # 检查必要的环境变量
 if [[ -z "$GITHUB_TOKEN" ]]; then
@@ -84,17 +84,6 @@ export GIT_USER_EMAIL="${GIT_USER_EMAIL:-gangzi@docker-claw.local}"
 echo "✅ Git配置已加载: $GIT_USER_NAME <$GIT_USER_EMAIL>"
 
 echo "✅ 环境变量已设置"
-
-# 初始化共享目录
-echo ""
-echo "📁 初始化共享目录..."
-
-if [ ! -f "$PROJECT_ROOT/shared/config.json" ]; then
-  echo "运行 init-shared.sh..."
-  "$PROJECT_ROOT/scripts/init-shared.sh"
-else
-  echo "✅ 共享目录已存在"
-fi
 
 # 复制配置文件到OpenClaw工作目录
 echo ""
@@ -247,7 +236,7 @@ echo "✅ 刚子启动成功！"
 echo "================================"
 echo ""
 echo "📋 信息:"
-echo "  - Agent: 刚子 (协调者)"
+echo "  - Agent: 刚子 (观察者)"
 echo "  - 工作目录: $OPENCLAW_WORKSPACE"
 echo "  - 共享目录: $PROJECT_ROOT/shared"
 echo "  - Gateway: 运行中"

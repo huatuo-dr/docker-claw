@@ -19,7 +19,7 @@ triggers:
 ```bash
 # Python handles JSON parsing, outputs shell variables
 eval $(python3 /scripts/read_task_config.py)
-# now available: $REPO, $BRANCH, $REPO_NAME, $BRANCH_SAFE, $STATUS_DIR, $STATUS_FILE
+# now available: $REPO, $BRANCH, $REPO_NAME, $BRANCH_SAFE
 
 cd /workspace/$REPO_NAME
 ```
@@ -55,7 +55,6 @@ else
   dev_phase="开发中"
 fi
 
-python3 /scripts/write_status.py --phase "$dev_phase" --repo "$REPO_NAME" --branch "$BRANCH" --test-round "$current_round"
 python3 /scripts/parse_task.py --set-developer-status "$dev_phase" task.json
 ```
 
@@ -158,25 +157,12 @@ git commit -m "更新开发状态: 等待第${next_round}轮审查"
 git push origin "$BRANCH"
 ```
 
-### 8. 更新最终状态
-
-```bash
-python3 /scripts/write_status.py \
-  --phase "等待审查" \
-  --repo "$REPO_NAME" \
-  --branch "$BRANCH" \
-  --test-round $next_round \
-  --commits $total_commits
-```
-
----
-
 ## 注意事项
 
 1. **本地commit多个**：不要每个里程碑都push
 2. **所有完成后push**：只在所有milestone完成后才push
 3. **本地测试**：push前必须测试
-4. **更新状态**：每个关键节点都更新 jianbing-status.json
+4. **更新 task.json**：每个关键节点都更新开发者状态和里程碑状态
 
 ---
 

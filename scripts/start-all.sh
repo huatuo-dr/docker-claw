@@ -65,21 +65,10 @@ if [[ -n "$FEISHU_APP_ID" ]]; then
   echo "  - 飞书通讯: 已配置"
 fi
 
-# 初始化共享目录
-echo ""
-echo "📁 初始化共享目录..."
-
-if [ ! -f "$PROJECT_ROOT/shared/config.json" ]; then
-  echo "运行 init-shared.sh..."
-  "$PROJECT_ROOT/scripts/init-shared.sh"
-else
-  echo "✅ 共享目录已存在"
-fi
-
 # 1. 启动刚子（宿主机）
 echo ""
 echo "================================"
-echo "1/3 启动刚子（协调者）"
+echo "1/3 启动刚子（观察者）"
 echo "================================"
 
 "$PROJECT_ROOT/scripts/start-gangzi.sh"
@@ -114,20 +103,17 @@ echo "================================"
 echo ""
 echo "📋 Agent状态:"
 echo ""
-echo "🤖 刚子（协调者）:"
+echo "🤖 刚子（观察者）:"
 echo "  - 位置: 宿主机"
 echo "  - Gateway: $(openclaw gateway status 2>/dev/null | grep -o 'running\|stopped' || echo '未知')"
-echo "  - 状态文件: $PROJECT_ROOT/shared/status/gangzi.json"
 echo ""
 echo "🐶 煎饼（开发者）:"
 echo "  - 容器: jianbing-claw-container"
 echo "  - 状态: $(docker ps --filter name=jianbing-claw-container --format '{{.Status}}')"
-echo "  - 状态文件: $PROJECT_ROOT/shared/status/jianbing.json"
 echo ""
 echo "🦊 墨汁儿（审查者）:"
 echo "  - 容器: mozhi-claw-container"
 echo "  - 状态: $(docker ps --filter name=mozhi-claw-container --format '{{.Status}}')"
-echo "  - 状态文件: $PROJECT_ROOT/shared/status/mozhi.json"
 echo ""
 echo "📊 监控命令:"
 echo ""
@@ -144,7 +130,7 @@ echo "  # 查看墨汁儿日志"
 echo "  docker logs -f mozhi-claw-container"
 echo ""
 echo "  # 查看任务状态"
-echo "  cat $PROJECT_ROOT/shared/status/summary.json | jq ."
+echo "  cat /path/to/repo/task.json | jq ."
 echo ""
 echo "🛑 停止所有Agent:"
 echo ""

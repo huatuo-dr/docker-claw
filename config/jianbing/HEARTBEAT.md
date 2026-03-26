@@ -27,10 +27,7 @@ git fetch origin
 git checkout "$BRANCH"
 git pull origin "$BRANCH"
 
-# === 4. ensure status directory exists ===
-mkdir -p "$STATUS_DIR"
-
-# === 5. read task.json and decide action ===
+# === 4. read task.json and decide action ===
 if [ -f "task.json" ]; then
   DEV_STATUS=$(python3 /scripts/parse_task.py --developer-status-only task.json)
   REVIEW_STATUS=$(python3 /scripts/parse_task.py --reviewer-status-only task.json)

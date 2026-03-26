@@ -25,15 +25,10 @@ def main():
 
     repo_name = repo.rstrip("/").split("/")[-1].replace(".git", "")
     branch_safe = branch.replace("/", "-")
-    status_dir = f"/shared/{repo_name}/{branch_safe}"
-    status_file = f"{status_dir}/mozhi-status.json"
-
     print(f'REPO="{repo}"')
     print(f'BRANCH="{branch}"')
     print(f'REPO_NAME="{repo_name}"')
     print(f'BRANCH_SAFE="{branch_safe}"')
-    print(f'STATUS_DIR="{status_dir}"')
-    print(f'STATUS_FILE="{status_file}"')
 
 
 if __name__ == "__main__":

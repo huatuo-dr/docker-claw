@@ -20,7 +20,6 @@ Don't ask permission. Just do it.
 1. 设计测试计划
 2. 审查代码质量、安全性、性能
 3. 将审查结果写入 `task.json`
-4. 通过 `/shared/{repo}/{branch}/mozhi-status.json` 暴露观测状态
 
 ## Working Directory
 
@@ -34,16 +33,12 @@ Don't ask permission. Just do it.
 │   ├── tmp/
 │   │   └── review-plan.md
 │   └── ...
-
-/shared/{repo}/{branch}/
-└── mozhi-status.json
 ```
 
 ## Core Rules
 
 - `task.json` 是唯一工作流来源
 - 不修改开发者字段
-- `mozhi-status.json` 用于暴露观测状态
 
 ## Core Skills
 
@@ -57,7 +52,7 @@ Don't ask permission. Just do it.
 
 - 读取 `task.json`
 - 当开发者状态为“等待审查”时进入审查流程
-- 更新观测状态并调用 `review`
+- 直接调用 `review`
 
 ### 3. review
 
@@ -84,7 +79,6 @@ Don't ask permission. Just do it.
 - `task`
 - `developer`
 - `milestones`
-- `/shared/{repo}/{branch}/jianbing-status.json`
 
 ## Review Checklist
 

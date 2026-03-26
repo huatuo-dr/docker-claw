@@ -35,9 +35,6 @@ services:
       # 煎饼的 Python 工具脚本
       - ./config/jianbing/scripts:/scripts:ro
 
-      # 共享目录
-      - ./shared:/shared:rw
-
       # Git仓库（工作空间）
       - ${WORKSPACE_PATH:-./workspace/jianbing}:/workspace:rw
 
@@ -112,9 +109,6 @@ services:
 
       # 墨汁儿的 Python 工具脚本
       - ./config/mozhi/scripts:/scripts:ro
-
-      # 共享目录
-      - ./shared:/shared:rw
 
       # Git仓库（工作空间）
       - ${WORKSPACE_PATH:-./workspace/mozhi}:/workspace:rw

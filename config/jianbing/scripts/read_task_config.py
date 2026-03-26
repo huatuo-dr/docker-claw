@@ -9,8 +9,6 @@ Output (shell eval-able):
     BRANCH=task/login
     REPO_NAME=test-task-repo
     BRANCH_SAFE=task-login
-    STATUS_DIR=/shared/test-task-repo/task-login
-    STATUS_FILE=/shared/test-task-repo/task-login/jianbing-status.json
 """
 
 import json
@@ -39,16 +37,11 @@ def main():
     repo_name = repo.rstrip("/").split("/")[-1].replace(".git", "")
     branch_safe = branch.replace("/", "-")
 
-    status_dir = f"/shared/{repo_name}/{branch_safe}"
-    status_file = f"{status_dir}/jianbing-status.json"
-
     # output shell variables
     print(f'REPO="{repo}"')
     print(f'BRANCH="{branch}"')
     print(f'REPO_NAME="{repo_name}"')
     print(f'BRANCH_SAFE="{branch_safe}"')
-    print(f'STATUS_DIR="{status_dir}"')
-    print(f'STATUS_FILE="{status_file}"')
 
 
 if __name__ == "__main__":

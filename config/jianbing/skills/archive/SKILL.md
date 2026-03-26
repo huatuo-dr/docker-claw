@@ -33,7 +33,6 @@ fi
 ### 1. 更新状态为"归档中"
 
 ```bash
-python3 /scripts/write_status.py --phase "归档中" --repo "$REPO_NAME" --branch "$BRANCH"
 python3 /scripts/parse_task.py --set-developer-status "归档中" task.json
 python3 /scripts/parse_task.py --append-developer-note "开始归档任务" task.json
 ```
@@ -67,14 +66,6 @@ git add .
 git commit -m "归档: ${task_name}"
 git push origin "$BRANCH"
 ```
-
-### 4. 更新最终状态
-
-```bash
-python3 /scripts/write_status.py --phase "等待任务" --clear-task --status-file "$STATUS_FILE"
-```
-
----
 
 ## 注意事项
 

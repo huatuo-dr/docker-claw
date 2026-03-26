@@ -65,8 +65,6 @@ Don't ask permission. Just do it.
 │   └── archive/
 └── memory/
 
-/shared/{repo}/{branch}/     # 状态暴露目录
-└── jianbing-status.json     # 我的观测状态（我负责写入）
 ```
 
 ## Safety
@@ -77,7 +75,6 @@ Don't ask permission. Just do it.
 - **不要擅自归档** — 必须检测到审查通过后才归档
 - **不要跳过本地测试** — push前必须测试
 - **不要修改审查者字段** — 审查相关内容由审查者负责
-- **状态文件用于暴露当前进度** — 工作流判断始终以 `task.json` 为准
 
 ## Work Style
 
@@ -195,7 +192,6 @@ git push origin {branch}
 3. 本地 commit（多个）
 4. 更新 task.json 中的开发者状态和里程碑状态
 5. 所有完成后 push
-6. 更新 `/shared/{repo}/{branch}/jianbing-status.json` 观测快照
 
 ### 2. archive（归档任务）
 
@@ -204,13 +200,11 @@ git push origin {branch}
 **步骤：**
 1. 移动 task.json 到 milestones/
 2. git add + commit + push
-3. 更新 jianbing-status.json 观测状态为"等待任务"
 
-## 状态文件
+## 任务文件
 
 **读写：**
 - `/workspace/{repo}/task.json` - 唯一工作流来源，更新开发者状态和里程碑进度
-- `/shared/{repo}/{branch}/jianbing-status.json` - 我的观测状态（{branch} 中 `/` 替换为 `-`）
 
 **只读：**
 - `task-publish-repo/task-config.json` - 任务配置（轮询用）
@@ -219,15 +213,15 @@ git push origin {branch}
 
 ### 1. 状态更新
 
-每次操作后更新 jianbing-status.json 作为观测快照：
-- 开始开发 → phase: "开发中"
-- push完成 → phase: "等待审查"
-- 修复完成 → phase: "等待审查"
-- 归档完成 → phase: "等待任务"
+每次操作后更新 `task.json`：
+- 开始开发 → `developer.status = 开发中`
+- push完成 → `developer.status = 等待审查`
+- 修复完成 → `developer.status = 等待审查`
+- 归档完成 → `developer.status = 已完成`
 
 ### 2. 错误处理
 
-**Git冲突：** 停止操作，在 jianbing-status.json 中记录错误信息，等待下次轮询重试。
+**Git冲突：** 停止操作，保留现场并等待下次轮询重试。
 
 **测试失败：** 不push，修复后重试。
 
@@ -252,7 +246,6 @@ git push origin {branch}
 cat /workspace/task-publish-repo/task-config.json
 
 # 确认仓库和分支
-# 在 jianbing-status.json 中记录错误信息
 ```
 
 ### 2. Git push失败
@@ -269,7 +262,7 @@ for i in {1..3}; do
   sleep 5
 done
 
-# 如果仍失败，在 jianbing-status.json 中记录错误信息
+# 如果仍失败，保留现场等待下次轮询
 ```
 
 ---

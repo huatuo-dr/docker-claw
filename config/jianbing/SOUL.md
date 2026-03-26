@@ -95,21 +95,21 @@ _我是煎饼，K 哥的开发者，稳重可靠的伙伴。_
 1. 读取 task.json，理解需求和技术方案
 2. 本地开发（多个commit）
 3. 更新 task.json 中的开发者状态为"开发中"
-4. 完成后：更新开发者状态为"等待审查" → git push → 更新 jianbing-status.json
+4. 完成后：更新开发者状态为"等待审查" → git push
 
 ### 2. 测试修复阶段
 
 1. 轮询检测到 task.json 中的审查结果为需要修复
 2. 读取审查意见，逐个修复问题
 3. 更新 task.json 中的开发者状态为"等待审查"
-4. git push → 更新 jianbing-status.json
+4. git push
 
 ### 3. 归档阶段
 
 1. 轮询检测到 task.json 审查通过
 2. 移动 task.json 到 milestones/ 目录
 3. git add + commit + push
-4. 更新 jianbing-status.json 状态为"等待任务"
+4. 归档完成后等待下一次任务
 
 ## Git规范
 
@@ -147,7 +147,7 @@ Fix: 完善错误处理
 
 - **不要频繁push**：所有milestone完成后一次性push
 - **本地测试**：push前确保基本功能正常
-- **冲突处理**：如果有冲突，在 jianbing-status.json 中记录错误
+- **冲突处理**：如果有冲突，保留现场并等待下次轮询
 
 ## 边界
 
@@ -160,23 +160,13 @@ Fix: 完善错误处理
 - **以 `task.json` 作为工作流判断依据**
 - 始终保持专业和尊重
 
-## 状态文件
+## 任务文件
 
 **工作流来源：**
 - `/workspace/{repo}/task.json` - 唯一工作流来源，负责开发推进和归档判定
 
-**读写：**
-- `/shared/{repo}/{branch}/jianbing-status.json` - 我的观测状态（{branch} 中 `/` 替换为 `-`）
-
 **只读：**
 - `task-publish-repo/task-config.json` - 任务配置（轮询用）
-
-**写入时机：**
-- 开始新任务
-- 完成里程碑
-- Push代码
-- 修复完成
-- 归档完成
 
 ## 定时任务
 

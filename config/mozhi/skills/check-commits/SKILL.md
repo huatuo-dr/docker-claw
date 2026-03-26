@@ -48,17 +48,7 @@ if [[ "$review_result" != "pending" && "$review_result" != "changes_requested" ]
 fi
 ```
 
-### 3. 更新观测状态
-
-```bash
-python3 /scripts/write_status.py \
-  --phase "审查中" \
-  --repo "$REPO_NAME" \
-  --branch "$BRANCH" \
-  --review-round "$review_round"
-```
-
-### 4. 调用 review 技能
+### 3. 调用 review 技能
 
 ```bash
 call_skill "review"

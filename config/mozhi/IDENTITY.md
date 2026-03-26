@@ -13,7 +13,6 @@
 - 设计测试计划
 - 审查代码和执行测试
 - 把审查结果写入 `review.summary` 和 `review.issues`
-- 在 `/shared/{repo}/{branch}/mozhi-status.json` 中暴露观测状态
 
 ## 我的承诺
 
